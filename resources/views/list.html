@@ -1,0 +1,29 @@
+<input type="text" ng-model="search" class="search-query" placeholder="Search">
+  <table>
+  <thead>
+      <tr>
+        <th>Relais</th>
+        <th>State</th>
+        <th><a href="#/new"><i class="icon-plus-sign"></i></a></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="rel in relais | filter:search | orderBy:'pinName'" ng-show="rel.pinName">
+        <td><a href="{{rel.pinName}}" target="_blank">{{rel.pinName}}</a></td>
+        <td>
+          <form name="myForm">
+            <div class="onoffswitch">
+              <input type="checkbox" name="onoffswitch" ng-model="rel.pinState" class="onoffswitch-checkbox" id="myonoffswitch" ng-true-value="low" ng-false-value="high" ng-change="save(rel)"/></form>
+              <label class="onoffswitch-label" for="myonoffswitch">
+                <span class="onoffswitch-inner"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+            </div>
+          </form>
+        </td>
+        <td>
+          <a href="#/edit/{{rel.pinName}}"><i class="icon-pencil"></i></a>
+        </td>
+      </tr>
+    </tbody>
+</table>
