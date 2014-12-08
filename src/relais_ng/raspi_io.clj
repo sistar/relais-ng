@@ -117,12 +117,14 @@
     (assoc component :rio nil)))
 
 (defn create-rio
-  [deps]
-  (let [settings (:settings deps)
-        raspi? (:raspi? (:state settings))]
-    (if raspi?
-      (map->RaspIo {:deps deps})
-      (map->RaspIoMock {:deps deps}))))
+  []
+  (map->RaspIo {})
+  )
+
+(defn create-rio-mock
+  []
+  (map->RaspIoMock {})
+  )
 
 (defn get-state
   "nil for non existing pin"
