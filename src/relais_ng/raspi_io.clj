@@ -48,8 +48,9 @@
 
 (defn init-states
   [self]
-  (let [pin-states @(:pin-states self)]
-    (doseq [kv pin-states] (init-or-alter-state self (key kv) (val kv)))))
+  (let [pin-states @(:pin-states self)
+        _ (doseq [kv pin-states] (init-or-alter-state self (key kv) (val kv)))])
+  self)
 
 (defn frm-save
   "Save a clojure form to file."
@@ -77,14 +78,12 @@
   (start [component]
     (println ";; Starting Raspberry Pi IO")
     (let [gpIoController (GpioFactory/getInstance)
-          store (File. "heat-state.clj")]
-      (assoc component :gpio-pin-digital-outputs (ref {}))
-      (assoc component :gpIoController gpIoController)
-      (if (.isFile store)
-        (assoc component :pin-states (ref (frm-load store)))
-        (assoc component :pin-states (ref {}))
-        ))
-    (init-states component)))
+          store (File. "heat-state.clj")
+          pin-states (if (.isFile store) (ref (frm-load store)) (ref {}))]
+      (-> (assoc component :gpio-pin-digital-outputs (ref {}))
+          (assoc :gpIoController gpIoController)
+          (assoc :pin-states pin-states)
+          (init-states)))))
 
 (defn createPinProxy [name]
   (proxy [com.pi4j.io.gpio.GpioPinDigitalOutput] []
