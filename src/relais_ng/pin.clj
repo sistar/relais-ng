@@ -1,7 +1,7 @@
 (ns relais-ng.pin
   (:require [com.stuartsierra.component :as component]
             [schema.core :as s]
-            [relais-ng.raspi_io :refer :all]
+            [relais-ng.raspi-io :refer :all]
             [clojure.tools.logging :as log]))
 (s/defschema Pin {:pinName String :pinState String})
 

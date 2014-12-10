@@ -4,9 +4,9 @@
             [relais-ng.handler :as handler]
             [relais-ng.pin :as pin]
             [relais-ng.main :as main]
-            [relais-ng.raspi_io :as rio]
+            [relais-ng.raspi-io :as rio]
             [com.stuartsierra.component :as c]
-            [relais-ng.raspi_io :as rio]))
+            ))
 
 (defn test-system []
   (->

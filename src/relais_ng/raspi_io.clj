@@ -1,14 +1,11 @@
-(ns relais-ng.raspi_io
+(ns relais-ng.raspi-io
   (:import (com.pi4j.io.gpio GpioController GpioFactory PinState RaspiPin)
            (java.io File))
-  (:require [com.stuartsierra.component :as component]))
+  (:require [com.stuartsierra.component :as component]
+            [clojure.tools.logging :as log]))
 
-(defn lookup-pin-state [s]
+(defn str-to-pin-state [s]
   (if (= (clojure.string/lower-case s) "high") PinState/HIGH PinState/LOW))
-
-(defn set-pin-state [self id desiredState]
-  (prn [id "to" desiredState] " really: " (lookup-pin-state desiredState) "toString" (.toString (lookup-pin-state desiredState)))
-  (.setState ((:pins self) id) (lookup-pin-state desiredState)))
 
 (def raspi-pins {"00" RaspiPin/GPIO_00
                  "01" RaspiPin/GPIO_01
@@ -26,31 +23,28 @@
   (let [gpIoController (:gpIoController self)
         raspi-pin (get raspi-pins pin-name)
         gpio-pin-digital-output (if (some? raspi-pin)
-                                  (.provisionDigitalOutputPin gpIoController raspi-pin pin-state))]
+                                  (.provisionDigitalOutputPin gpIoController raspi-pin pin-state)
+                                  (log/error "no raspi pin " pin-name))]
     (if (some? gpio-pin-digital-output)
       (dosync (alter (:gpio-pin-digital-outputs self) assoc pin-name gpio-pin-digital-output))
-      )))
+
+      ) (log/debug @(:gpio-pin-digital-outputs self))))
 
 (defn init-state [self pin-name pin-state-str]
-  (init-dig-io-pin self pin-name (lookup-pin-state pin-state-str)))
+  (init-dig-io-pin self pin-name (str-to-pin-state pin-state-str)))
 
 (defn alter-state [self pin-name pin-state-str]
-  (let [new-state (lookup-pin-state pin-state-str)
+  (let [new-state (str-to-pin-state pin-state-str)
         gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) pin-name)]
     (if (some? gpio-pin-digital-output)
-      (.setState gpio-pin-digital-output new-state))))
+      (.setState gpio-pin-digital-output new-state)
+      (log/error "no digital output" pin-name " not setting pin state" pin-state-str))))
 
 (defn init-or-alter-state [self pin-name pin-state-str]
   (let [gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) pin-name)]
     (if (some? gpio-pin-digital-output)
       (alter-state self pin-name pin-state-str)
       (init-state self pin-name pin-state-str))))
-
-(defn init-states
-  [self]
-  (let [pin-states @(:pin-states self)
-        _ (doseq [kv pin-states] (init-or-alter-state self (key kv) (val kv)))])
-  self)
 
 (defn frm-save
   "Save a clojure form to file."
@@ -66,94 +60,76 @@
     (let [rec (read r)]
       rec)))
 
-(defn persist-states
-  [self]
-  (let [pin-states @(:pin-states self)]
-    (frm-save (File. "heat-state.clj") pin-states)
-    )
-  )
+(defn init-from-persisted [c pin-states]
+  (doseq [kv pin-states]
+    (init-or-alter-state c (:pinName kv) (:pinState kv)))
+  c)
 
-(defrecord RaspIo [gpIoController]
+(defrecord RaspIo [native gpIoController]
   component/Lifecycle
   (start [component]
-    (println ";; Starting Raspberry Pi IO")
-    (let [gpIoController (GpioFactory/getInstance)
-          store (File. "heat-state.clj")
-          pin-states (if (.isFile store) (ref (frm-load store)) (ref {}))]
+    (println ";; Starting Raspberry Pi IO native:" native)
+    (let [store (File. "heat-state.clj")
+          pin-states (if (.isFile store)
+                       (frm-load store)
+                       {})]
       (-> (assoc component :gpio-pin-digital-outputs (ref {}))
-          (assoc :gpIoController gpIoController)
-          (assoc :pin-states pin-states)
-          (assoc :native? true)
-          (init-states)))))
-
-(defn createPinProxy [name]
-  (proxy [com.pi4j.io.gpio.GpioPinDigitalOutput] []
-    (getState [] com.pi4j.io.gpio.PinState/HIGH)
-    (getName [] name)))
-
-(defn createControllerProxy []
-  (proxy [com.pi4j.io.gpio.GpioController] []
-    (provisionDigitalOutputPin
-      ([] (createPinProxy "?"))
-      ([provider pin] (createPinProxy "??"))
-      ([pin pinName pinState] (println pin pinName pinState) (createPinProxy pinName))
-      ([provider pin pinName pinState] (println provider pin pinName pinState) (createPinProxy pinName)))))
-
-(defrecord RaspIoMock [gpIoController]
-  component/Lifecycle
-  (start [component]
-    (println ";; Starting Raspberry Pi IO Mock")
-    (let [gpIoController (createControllerProxy)
-          store (File. "heat-state.clj")
-          pin-states (if (.isFile store) (ref (frm-load store)) (ref {}))]
-      (-> (assoc component :gpio-pin-digital-outputs (ref {}))
-          (assoc :gpIoController gpIoController)
-          (assoc :pin-states pin-states)
-          (assoc :native? false))))
-
+          (init-from-persisted pin-states))))
   (stop [component]
-    (println ";; Stopping Raspberry Pi IO Mock")
+    (println ";; Stopping Raspberry Pi IO")
     (assoc component :rio nil)))
 
 (defn create-rio
   []
-  (map->RaspIo {})
+  (map->RaspIo {:native?        true
+                :gpIoController (GpioFactory/getInstance)})
   )
+
+(defn createPinProxy [name]
+  (let [state (atom {:pin-state com.pi4j.io.gpio.PinState/HIGH})]
+    (proxy [com.pi4j.io.gpio.GpioPinDigitalOutput] []
+      (getState [] (:pin-state @state))
+      (setState [pinState] (swap! state assoc :pin-state pinState))
+      (getName [] name))))
 
 (defn create-rio-mock
   []
-  (map->RaspIoMock {})
-  )
+  (map->RaspIo {:native?        false
+                :gpIoController (proxy [com.pi4j.io.gpio.GpioController] []
+                                  (provisionDigitalOutputPin
+                                    ([] (createPinProxy "?"))
+                                    ([provider pin] (createPinProxy "??"))
+                                    ([pin pinName pinState] (println pin pinName pinState) (createPinProxy pinName))
+                                    ([provider pin pinName pinState] (println provider pin pinName pinState) (createPinProxy pinName))))}))
 
 (defn get-state
   "nil for non existing pin"
-  [self id]
-  (let [pin-states @(:pin-states self)
-        pin-state (pin-states id)]
-    pin-state)
-  )
+  [self pin-name]
+  (let [gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) pin-name)]
+    (if (some? gpio-pin-digital-output)
+      (.name (.getState gpio-pin-digital-output))
+      nil)))
 
 (defn relais-info
   [self]
-  (let [psmr (:pin-states self)
-        names (keys @psmr)
-        states (map #(get-state self %) names)
-        vectors (map vector names states)]
+  (let [pin-names (keys @(:gpio-pin-digital-outputs self))
+        states (map #(get-state self %) pin-names)
+        vectors (map vector pin-names states)]
     (map #(zipmap [:pinName :pinState] %) vectors)))
 
+(defn persist-states!
+  [self]
+  (frm-save (File. "heat-state.clj") (relais-info self)))
+
 (defn single-relais-info
-  [self id]
-  (let [state (get-state self id)]
+  [self pin-name]
+  (let [state (get-state self pin-name)]
     (if (some? state)
-      (zipmap [:pinName :pinState] [id state])
+      (zipmap [:pinName :pinState] [pin-name state])
       nil)))
 
 (defn set-relais-state
   [self pin]
-
-  (dosync (alter (:pin-states self) assoc (:pinName pin)  (:pinState pin)))
-  (if (:native? self)
-    (set-pin-state self (:pinName pin) (:pinState pin))
-    (println "mock mode not really setting pin" (:pinName pin) " to " (:pinState pin)))
-  (persist-states self)
+  (init-or-alter-state self (:pinName pin) (:pinState pin))
+  (persist-states! self)
   (single-relais-info self (:pinName pin)))

@@ -2,7 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [relais-ng.pin :refer :all]
-            [relais-ng.raspi_io :refer :all]
+            [relais-ng.raspi-io :refer :all]
             [clojure.tools.logging :as log]))
 
 (defapi app

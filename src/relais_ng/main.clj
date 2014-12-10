@@ -4,7 +4,7 @@
     [com.stuartsierra.component :as component]
     [relais-ng.settings :refer [new-settings]]
     [relais-ng.http-server :refer [create-http-server]]
-    [relais-ng.raspi_io :refer [create-rio create-rio-mock]]
+    [relais-ng.raspi-io :refer [create-rio create-rio-mock]]
     [relais-ng.utils :refer [on-shutdown]])
   (:gen-class :main true))
 
