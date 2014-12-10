@@ -83,6 +83,7 @@
       (-> (assoc component :gpio-pin-digital-outputs (ref {}))
           (assoc :gpIoController gpIoController)
           (assoc :pin-states pin-states)
+          (assoc :native? true)
           (init-states)))))
 
 (defn createPinProxy [name]
@@ -103,13 +104,12 @@
   (start [component]
     (println ";; Starting Raspberry Pi IO Mock")
     (let [gpIoController (createControllerProxy)
-          store (File. "heat-state.clj")]
-      (assoc component :gpio-pin-digital-outputs (ref {}))
-      (assoc component :gpIoController gpIoController)
-      (if (.isFile store)
-        (assoc component :pin-states (ref (frm-load store)))
-        (assoc component :pin-states (ref {}))
-        )))
+          store (File. "heat-state.clj")
+          pin-states (if (.isFile store) (ref (frm-load store)) (ref {}))]
+      (-> (assoc component :gpio-pin-digital-outputs (ref {}))
+          (assoc :gpIoController gpIoController)
+          (assoc :pin-states pin-states)
+          (assoc :native? false))))
 
   (stop [component]
     (println ";; Stopping Raspberry Pi IO Mock")
@@ -151,7 +151,9 @@
 (defn set-relais-state
   [self pin]
 
-  (dosync (alter (:pin-states self) assoc (:pinName pin) (:pinState pin)))
-  ;; only native (set-pin-state self (:pinName pin) (:pinState pin))
+  (dosync (alter (:pin-states self) assoc (:pinName pin)  (:pinState pin)))
+  (if (:native? self)
+    (set-pin-state self (:pinName pin) (:pinState pin))
+    (println "mock mode not really setting pin" (:pinName pin) " to " (:pinState pin)))
   (persist-states self)
   (single-relais-info self (:pinName pin)))
