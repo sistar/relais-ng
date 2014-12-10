@@ -32,7 +32,7 @@
       )))
 
 (defn init-state [self pin-name pin-state-str]
-  ((init-dig-io-pin self pin-name (lookup-pin-state pin-state-str))))
+  (init-dig-io-pin self pin-name (lookup-pin-state pin-state-str)))
 
 (defn alter-state [self pin-name pin-state-str]
   (let [new-state (lookup-pin-state pin-state-str)
