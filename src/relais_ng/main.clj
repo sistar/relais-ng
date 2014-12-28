@@ -17,7 +17,7 @@
              (create-rio) [:settings])
       :tm (tm/create-temp-measurement true)
       :http-server (component/using
-                     (create-http-server [:rio] 3000) [:rio]))))
+                     (create-http-server [:rio :tm] 3000) [:rio :tm]))))
 (defn base-system-mock []
   (->
     (component/system-map
@@ -26,7 +26,7 @@
              (create-rio-mock) [:settings])
       :tm (tm/create-temp-measurement false)
       :http-server (component/using
-                     (create-http-server [:rio] 3000) [:rio]))))
+                     (create-http-server [:rio :tm] 3000) [:rio :tm]))))
 
 
 (defrecord RelaisSystem []

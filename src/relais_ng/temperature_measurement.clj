@@ -9,7 +9,7 @@
 (defrecord TempMeasure [native?]
   component/Lifecycle
   (start [component]
-    (println ";; Starting Temperature Measurement Unit:" native?)
+    (println ";; Starting Temperature Measurement Unit [native]:" native?)
     (let [measure-script (if native?
                            "dht-22-sample.py"
                            "dht-22-sample-mock.py")]
@@ -30,7 +30,8 @@
         value (:measure-script self)
         result (sh/sh "python" value)
         out (:out result)
-        parsed (json/read-str out :key-fn keyword)]
+        parsed (json/read-str out :key-fn keyword)
+        _ (println "parsed.." parsed)]
     parsed
     ))
 
