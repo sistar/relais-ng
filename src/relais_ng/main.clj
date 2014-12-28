@@ -3,6 +3,7 @@
     [clojure.tools.logging :as log]
     [com.stuartsierra.component :as component]
     [relais-ng.settings :refer [new-settings]]
+    [relais-ng.temperature-measurement :as tm]
     [relais-ng.http-server :refer [create-http-server]]
     [relais-ng.raspi-io :refer [create-rio create-rio-mock]]
     [relais-ng.utils :refer [on-shutdown]])
@@ -14,6 +15,7 @@
       :settings new-settings
       :rio (component/using
              (create-rio) [:settings])
+      :tm (tm/create-temp-measurement true)
       :http-server (component/using
                      (create-http-server [:rio] 3000) [:rio]))))
 (defn base-system-mock []
@@ -22,6 +24,7 @@
       :settings new-settings
       :rio (component/using
              (create-rio-mock) [:settings])
+      :tm (tm/create-temp-measurement false)
       :http-server (component/using
                      (create-http-server [:rio] 3000) [:rio]))))
 

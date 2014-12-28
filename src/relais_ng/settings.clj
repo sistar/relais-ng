@@ -8,6 +8,7 @@
 (def template
   {:type            :real
    :raspi?            false
+   :temperature-py   "dht-22-sample.py"
    })
 
 (def parsers

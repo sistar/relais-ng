@@ -18,6 +18,6 @@
 
   (testing "getting unkown pin returns nil"
     (let [s (c/start-system (test-system))
-          result-state-zero (rio/get-state (:rio s) "07")]
+          result-state-zero (rio/get-state (:rio s) "07A")]
       (is (= result-state-zero nil)))))
 

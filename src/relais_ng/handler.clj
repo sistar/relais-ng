@@ -2,6 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [relais-ng.pin :refer :all]
+            [relais-ng.temperature-measurement :refer :all]
             [relais-ng.raspi-io :refer :all]
             [clojure.tools.logging :as log]))
 
@@ -26,10 +27,15 @@
                          (let [p (get-pin rio id)]
                            (if (some? p)
                              (ok p)
-                             (not-found {:message "not-found"})
-                             )
-                           )
-                         )
+                             (not-found {:message "not-found"}))))
+                   (GET* "/temperature" []
+                         :return Measurement
+                         :components [tm]
+                         :responses {404 [String]}
+                         (let [p (get-Measurement tm)]
+                           (if (some? p)
+                             (ok p)
+                             (not-found {:message "not-found"}))))
                    (PUT* "/relais" []
                          :return Pin
                          :body [body Pin]
