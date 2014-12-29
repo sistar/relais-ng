@@ -27,7 +27,7 @@
                            [com.pi4j/pi4j-core "0.0.5"]
 
                            ;; omg logging
-                           [log4j "1.2.17"]]
+                           [ch.qos.logback/logback-classic "1.1.2"]]
             ;;:ring {:handler relais-ng.handler/app}
             :main relais-ng.main
             :uberjar-name "server.jar"

@@ -12,22 +12,21 @@
 (defn base-system []
   (->
     (component/system-map
-      :settings new-settings
+      :settings (new-settings)
       :rio (component/using
              (create-rio) [:settings])
-      :tm (tm/create-temp-measurement true)
+      :tm (component/using (tm/create-temp-measurement)[:settings])
       :http-server (component/using
                      (create-http-server [:rio :tm] 3000) [:rio :tm]))))
 (defn base-system-mock []
   (->
     (component/system-map
-      :settings new-settings
+      :settings (new-settings)
       :rio (component/using
              (create-rio-mock) [:settings])
-      :tm (tm/create-temp-measurement false)
+      :tm (component/using (tm/create-temp-measurement)[:settings])
       :http-server (component/using
                      (create-http-server [:rio :tm] 3000) [:rio :tm]))))
-
 
 (defrecord RelaisSystem []
   component/Lifecycle

@@ -8,7 +8,7 @@
 (def template
   {:type            :real
    :raspi?            false
-   :temperature-py   "dht-22-sample.py"
+     :measure-script   "/var/opt/relais-ng/dht-22-sample-mock.py"
    })
 
 (def parsers
