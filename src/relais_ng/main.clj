@@ -24,7 +24,8 @@
       :settings (new-settings)
       :rio (component/using
              (create-rio-mock) [:settings])
-      :tm (component/using (tm/create-temp-measurement)[:settings])
+      :tm (component/using
+            (tm/create-temp-measurement [:settings])[:settings])
       :http-server (component/using
                      (create-http-server [:rio :tm] 3000) [:rio :tm]))))
 

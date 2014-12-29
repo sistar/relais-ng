@@ -2,7 +2,8 @@
   (:import (com.pi4j.io.gpio GpioController GpioFactory PinState RaspiPin)
            (java.io File))
   (:require [com.stuartsierra.component :as component]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [relais-ng.settings :as settings]))
 
 (defn str-to-pin-state [s]
   (if (= (clojure.string/lower-case s) "high") PinState/HIGH PinState/LOW))
@@ -65,15 +66,18 @@
     (init-or-alter-state c (:pinName kv) (:pinState kv)))
   c)
 
-(defrecord RaspIo [native gpIoController]
+(defrecord RaspIo [native gpIoController settings]
   component/Lifecycle
   (start [component]
     (println ";; Starting Raspberry Pi IO native:" native)
-    (let [store (File. "heat-state.clj")
+    (let [state-store (settings/get-setting settings :state-store)
+          store (File. state-store)
+          _ (log/debug "configured store is :"state-store " isFile: " (.isFile store))
           pin-states (if (.isFile store)
                        (frm-load store)
                        {})]
       (-> (assoc component :gpio-pin-digital-outputs (ref {}))
+          (assoc :store store)
           (init-from-persisted pin-states))))
   (stop [component]
     (println ";; Stopping Raspberry Pi IO")
@@ -119,7 +123,7 @@
 
 (defn persist-states!
   [self]
-  (frm-save (File. "heat-state.clj") (relais-info self)))
+  (frm-save (:store self) (relais-info self)))
 
 (defn single-relais-info
   [self pin-name]

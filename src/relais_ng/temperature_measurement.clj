@@ -12,19 +12,20 @@
   component/Lifecycle
   (start [component]
     (println ";; Starting Temperature Measurement Unit")
-    (let [measure-script (settings/get-setting settings :measure-script)
-          _ (log/debug "checking" measure-script)
-          script-found (fs/file? measure-script)
-          _ (if-not script-found (log/error "could not find python script for DHT-XX interaction: " measure-script))
+    (let [sc (settings/get-setting settings :measure-script)
+          _ (log/debug "checking" sc (type sc))
+          script-found (fs/file? sc)
+          _ (if-not script-found
+              (log/error "could not find python script for DHT-XX interaction: " sc (fs/file? "/var/opt/relais-ng/dht-22-sample-mock.py") (fs/file? sc) ))
           ]
-      (-> (assoc component :measure-script measure-script)
+      (-> (assoc component :measure-script sc)
           )))
   (stop [component]
     (println ";; Stopping Temperature Measurement Unit")
     ))
 
 (defn create-temp-measurement
-  []
+  [deps]
   (map->TempMeasure {}))
 
 
