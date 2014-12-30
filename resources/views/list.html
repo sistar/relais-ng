@@ -1,29 +1,45 @@
 <input type="text" ng-model="search" class="search-query" placeholder="Search">
-  <table>
-  <thead>
-      <tr>
+<table>
+    <thead>
+    <tr>
         <th>Relais</th>
         <th>State</th>
         <th><a href="#/new"><i class="icon-plus-sign"></i></a></th>
-      </tr>
+    </tr>
     </thead>
     <tbody>
-      <tr ng-repeat="rel in relais | filter:search | orderBy:'pinName'" ng-show="rel.pinName">
+    <tr ng-repeat="rel in relais | filter:search | orderBy:'pinName'" ng-show="rel.pinName">
         <td><a href="{{rel.pinName}}" target="_blank">{{rel.pinName}}</a></td>
         <td>
-          <form>
-            <div class="onoffswitch">
-              <input type="checkbox" id="cb{{rel.pinName}}" ng-model="rel.pinState" class="onoffswitch-checkbox" ng-true-value="'HIGH'" ng-false-value="'LOW'" ng-change="save(rel)"/>
-              <label class="onoffswitch-label" for="cb{{rel.pinName}}">
-                <span class="onoffswitch-inner"></span>
-                <span class="onoffswitch-switch"></span>
-            </label>
-            </div>
-          </form>
+            <form>
+                <div class="onoffswitch">
+                    <input type="checkbox" id="cb{{rel.pinName}}" ng-model="rel.pinState" class="onoffswitch-checkbox"
+                           ng-true-value="'HIGH'" ng-false-value="'LOW'" ng-change="save(rel)"/>
+                    <label class="onoffswitch-label" for="cb{{rel.pinName}}">
+                        <span class="onoffswitch-inner"></span>
+                        <span class="onoffswitch-switch"></span>
+                    </label>
+                </div>
+            </form>
         </td>
         <td>
-          <a href="#/edit/{{rel.pinName}}"><i class="icon-pencil"></i></a>
+            <a href="#/edit/{{rel.pinName}}"><i class="icon-pencil"></i></a>
         </td>
-      </tr>
+    </tr>
+    </tbody>
+</table>
+<br>
+<table>
+    <tbody>
+    <tr>
+        <td style=" text-align: right;font-weight: bold">Temperature:</td>
+        <td>{{measurement.temperature}}</td>
+        <td>°C</td>
+    </tr>
+    <tr>
+        <td style=" text-align: right;font-weight: bold">Humidity:</td>
+        <td>{{measurement.humidity}}</td>
+        <td>%</td>
+    </tr>
     </tbody>
 </table>

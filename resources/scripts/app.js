@@ -43,6 +43,7 @@ config( function($routeProvider,	RestangularProvider) {
 });
 function ListCtrl($scope, Restangular) {
    $scope.relais = Restangular.all("relais").getList().$object;
+   $scope.measurement = Restangular.one("temperature").get().$object;
 
    $scope.save = function(rel) {
     Restangular.all('relais').post(rel).then(function(relais) {
