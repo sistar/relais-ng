@@ -46,7 +46,7 @@ function ListCtrl($scope, Restangular) {
 
    $scope.save = function(rel) {
     Restangular.all('relais').post(rel).then(function(relais) {
-      $location.path('/list');
+
     });
   }
 }
