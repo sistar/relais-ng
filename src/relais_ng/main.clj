@@ -15,7 +15,7 @@
       :settings (new-settings)
       :rio (component/using
              (create-rio) [:settings])
-      :tm (component/using (tm/create-temp-measurement)[:settings])
+      :tm (component/using (tm/create-temp-measurement [:settings])[:settings])
       :http-server (component/using
                      (create-http-server [:rio :tm] 3000) [:rio :tm]))))
 (defn base-system-mock []
