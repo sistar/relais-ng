@@ -18,3 +18,4 @@ node_modules
 /project/
 /project/target/
 heat-state.clj
+src/public/

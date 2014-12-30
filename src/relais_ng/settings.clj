@@ -8,7 +8,8 @@
 (def template
   {:type            :real
    :raspi?            false
-     :measure-script   "/var/opt/relais-ng/dht-22-sample-mock.py"
+   :measure-script   "/var/opt/relais-ng/dht-22-sample-mock.py"
+   :state-store "/var/opt/relais-ng/heat-state.clj"
    })
 
 (def parsers

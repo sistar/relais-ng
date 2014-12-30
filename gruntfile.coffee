@@ -24,18 +24,18 @@ module.exports = (grunt) ->
 
     exec:
       server:
-        cmd: "lein with-profile dev ring server-headless"
+        cmd: "lein run"
       leintest:
         cmd: "lein with-profile testing test"
       build:
-        cmd: "lein with-profile production ring uberjar"
+        cmd: "lein uberjar"
       run:
         cmd: "lein run"
 
     coffee:
       compile:
         files:
-          "resources/public/static/js/capp.js": [
+          "src/public/static/js/capp.js": [
             "resources/scripts/*.coffee"
             "resources/scripts/controllers/*.coffee"
           ]
@@ -44,39 +44,39 @@ module.exports = (grunt) ->
       scripts:
         expand: true
         cwd: "resources/scripts"
-        dest: "resources/public/static/js/"
+        dest: "src/public/static/js/"
         src: "**/*.js"
       views:
         expand: true
         cwd: "resources/views"
-        dest: "resources/public/static/views/"
+        dest: "src/public/static/views/"
         src: "*.html"
       main:
         expand: true
         cwd: "resources"
-        dest: "resources/public/static/"
+        dest: "src/public/static/"
         src: "main.html"
       bower:
         expand: true
         cwd: "bower_components"
-        dest: "resources/public/static/vendor/"
+        dest: "src/public/static/vendor/"
         src: "**/*"
       fonts:
         expand: true
         cwd: "resources/fonts"
-        dest: "resources/public/static/fonts"
+        dest: "src/public/static/fonts"
         src: "**/*"
       images:
         expand: true
         cwd: "resources/images"
-        dest: "resources/public/static/img"
+        dest: "src/public/static/img"
         src: "**/*"
 
     compass:
       dist:
         options:
           sassDir: "resources/styles"
-          cssDir:  "resources/public/static/css"
+          cssDir:  "src/public/static/css"
 
     parallel:
       server:
@@ -125,7 +125,7 @@ module.exports = (grunt) ->
     "copy:bower"
     "copy:fonts"
     "copy:images"
-    "exec:run"
+    "exec:build"
   ]
 
   grunt.registerTask "test:all", [
