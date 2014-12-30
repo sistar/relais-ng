@@ -13,7 +13,7 @@
         <td>
           <form>
             <div class="onoffswitch">
-              <input type="checkbox" id="cb{{rel.pinName}}" ng-model="rel.pinState" class="onoffswitch-checkbox" ng-true-value="HIGH" ng-false-value="LOW" ng-change="save(rel)"/>
+              <input type="checkbox" id="cb{{rel.pinName}}" ng-model="rel.pinState" class="onoffswitch-checkbox" ngTrueValue="'HIGH'" ng-false-value="'LOW'" ng-change="save(rel)"/>
               <label class="onoffswitch-label" for="cb{{rel.pinName}}">
                 <span class="onoffswitch-inner"></span>
                 <span class="onoffswitch-switch"></span>
