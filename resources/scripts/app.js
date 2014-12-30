@@ -23,7 +23,7 @@ config( function($routeProvider,	RestangularProvider) {
   .otherwise({redirectTo: '/'});
 
   //RestangularProvider.setBaseUrl('http://192.168.1.105:3000');
-  RestangularProvider.setBaseUrl('http://localhost:3000');
+  RestangularProvider.setBaseUrl('../');
   RestangularProvider.setDefaultHttpFields({withCredentials: false});
 
       /*RestangularProvider.setDefaultRequestParams({ apiKey: '4f847ad3e4b08a2eed5f3b54' })
