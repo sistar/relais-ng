@@ -11,10 +11,10 @@
       <tr ng-repeat="rel in relais | filter:search | orderBy:'pinName'" ng-show="rel.pinName">
         <td><a href="{{rel.pinName}}" target="_blank">{{rel.pinName}}</a></td>
         <td>
-          <form name="myForm">
+          <form>
             <div class="onoffswitch">
-              <input type="checkbox" name="onoffswitch" ng-model="rel.pinState" class="onoffswitch-checkbox" id="myonoffswitch" ng-true-value="low" ng-false-value="high" ng-change="save(rel)"/></form>
-              <label class="onoffswitch-label" for="myonoffswitch">
+              <input type="checkbox" id="cb{{rel.pinName}}" ng-model="rel.pinState" class="onoffswitch-checkbox" ng-true-value="HIGH" ng-false-value="LOW" ng-change="save(rel)"/>
+              <label class="onoffswitch-label" for="cb{{rel.pinName}}">
                 <span class="onoffswitch-inner"></span>
                 <span class="onoffswitch-switch"></span>
             </label>

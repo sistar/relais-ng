@@ -114,7 +114,7 @@ module.exports = (grunt) ->
     "copy:bower"
     "copy:fonts"
     "copy:images"
-    "parallel:server"
+    "exec:run"
   ]
 
   grunt.registerTask "build", [
