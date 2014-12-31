@@ -18,6 +18,17 @@
                  "07" RaspiPin/GPIO_07
                  "08" RaspiPin/GPIO_08
                  "09" RaspiPin/GPIO_09
+                 "10" RaspiPin/GPIO_10
+                 "11" RaspiPin/GPIO_11
+                 "12" RaspiPin/GPIO_12
+                 "13" RaspiPin/GPIO_13
+                 "14" RaspiPin/GPIO_14
+                 "15" RaspiPin/GPIO_15
+                 "16" RaspiPin/GPIO_16
+                 "17" RaspiPin/GPIO_17
+                 "18" RaspiPin/GPIO_18
+                 "19" RaspiPin/GPIO_19
+                 "20" RaspiPin/GPIO_20
                  })
 
 (defn init-dig-io-pin [self pin-name pin-state]
@@ -25,24 +36,29 @@
         raspi-pin (get raspi-pins pin-name)
         gpio-pin-digital-output (if (some? raspi-pin)
                                   (.provisionDigitalOutputPin gpIoController raspi-pin pin-state)
-                                  (log/error "no raspi pin " pin-name))]
+                                  (log/error "no raspi pin for name" pin-name))]
     (if (some? gpio-pin-digital-output)
-      (dosync (alter (:gpio-pin-digital-outputs self) assoc pin-name gpio-pin-digital-output))
+      (do
+        (log/debug (.getName gpio-pin-digital-output) (.getState gpio-pin-digital-output))
+        (dosync (alter (:gpio-pin-digital-outputs self) assoc raspi-pin gpio-pin-digital-output)))
 
-      ) (log/debug @(:gpio-pin-digital-outputs self))))
+      )
+    (log/debug @(:gpio-pin-digital-outputs self))))
 
 (defn init-state [self pin-name pin-state-str]
   (init-dig-io-pin self pin-name (str-to-pin-state pin-state-str)))
 
 (defn alter-state [self pin-name pin-state-str]
   (let [new-state (str-to-pin-state pin-state-str)
-        gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) pin-name)]
+        raspi-pin (get raspi-pins pin-name)
+        gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) raspi-pin)]
     (if (some? gpio-pin-digital-output)
       (.setState gpio-pin-digital-output new-state)
       (log/error "no digital output" pin-name " not setting pin state" pin-state-str))))
 
 (defn init-or-alter-state [self pin-name pin-state-str]
-  (let [gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) pin-name)]
+  (let [raspi-pin (get raspi-pins pin-name)
+        gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) raspi-pin)]
     (if (some? gpio-pin-digital-output)
       (alter-state self pin-name pin-state-str)
       (init-state self pin-name pin-state-str))))
@@ -72,7 +88,7 @@
     (println ";; Starting Raspberry Pi IO native:" native)
     (let [state-store (settings/get-setting settings :state-store)
           store (File. state-store)
-          _ (log/debug "configured store is :"state-store " isFile: " (.isFile store))
+          _ (log/debug "configured store is :" state-store " isFile: " (.isFile store))
           pin-states (if (.isFile store)
                        (frm-load store)
                        {})]
@@ -89,8 +105,8 @@
                 :gpIoController (GpioFactory/getInstance)})
   )
 
-(defn createPinProxy [name]
-  (let [state (atom {:pin-state com.pi4j.io.gpio.PinState/HIGH})]
+(defn createPinProxy [name state]
+  (let [state (atom {:pin-state state})]
     (proxy [com.pi4j.io.gpio.GpioPinDigitalOutput] []
       (getState [] (:pin-state @state))
       (setState [pinState] (swap! state assoc :pin-state pinState))
@@ -101,23 +117,25 @@
   (map->RaspIo {:native?        false
                 :gpIoController (proxy [com.pi4j.io.gpio.GpioController] []
                                   (provisionDigitalOutputPin
-                                    ([] (createPinProxy "?"))
-                                    ([provider pin] (createPinProxy "??"))
-                                    ([pin pinName pinState] (println pin pinName pinState) (createPinProxy pinName))
-                                    ([provider pin pinName pinState] (println provider pin pinName pinState) (createPinProxy pinName))))}))
+                                    ([] (createPinProxy "?" (str-to-pin-state "HIGH")))
+                                    ([pin pinState] (createPinProxy (.getName pin) (str-to-pin-state pinState)))
+                                    ([pin pinName pinState] (createPinProxy pinName pinState))
+                                    ([provider pin pinName pinState] (createPinProxy pinName pinState))))}))
 
 (defn get-state
   "nil for non existing pin"
   [self pin-name]
-  (let [gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) pin-name)]
+  (let [raspi-pin (get raspi-pins pin-name)
+        gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) raspi-pin)]
     (if (some? gpio-pin-digital-output)
       (.name (.getState gpio-pin-digital-output))
       nil)))
 
 (defn relais-info
   [self]
-  (let [pin-names (keys @(:gpio-pin-digital-outputs self))
-        states (map #(get-state self %) pin-names)
+  (let [raspi-pins (keys @(:gpio-pin-digital-outputs self))
+        states (map #(get-state self %) raspi-pins)
+        pin-names (map #(format "%02d" (.address %)) raspi-pins)
         vectors (map vector pin-names states)]
     (map #(zipmap [:pinName :pinState] %) vectors)))
 

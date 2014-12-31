@@ -36,6 +36,11 @@
                            (if (some? p)
                              (ok p)
                              (not-found {:message "not-found"}))))
+                   (POST* "/heating-rule" []
+                          :body [body String]
+                          :summary "sets rule for heating-activation"
+                          :components [rio]
+                          )
                    (PUT* "/relais" []
                          :return Pin
                          :body [body Pin]

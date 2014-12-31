@@ -4,6 +4,7 @@
     [com.stuartsierra.component :as component]
     [relais-ng.settings :refer [new-settings]]
     [relais-ng.temperature-measurement :as tm]
+    [relais-ng.activation-manager :as am]
     [relais-ng.http-server :refer [create-http-server]]
     [relais-ng.raspi-io :refer [create-rio create-rio-mock]]
     [relais-ng.utils :refer [on-shutdown]])
@@ -26,8 +27,11 @@
              (create-rio-mock) [:settings])
       :tm (component/using
             (tm/create-temp-measurement [:settings])[:settings])
+      :am (component/using
+            (am/activation-manager-component)
+            [:rio :tm :settings])
       :http-server (component/using
-                     (create-http-server [:rio :tm] 3000) [:rio :tm]))))
+                     (create-http-server [:rio :tm :am] 3000) [:rio :tm :am]))))
 
 (defrecord RelaisSystem []
   component/Lifecycle
