@@ -139,6 +139,12 @@
         vectors (map vector pin-names states)]
     (map #(zipmap [:pinName :pinState] %) vectors)))
 
+(defn pin-names
+  [self]
+  (let [raspi-pins (keys @(:gpio-pin-digital-outputs self))
+        names (map #(format "%02d" (.getAddress %)) raspi-pins)]
+    names))
+
 (defn persist-states!
   [self]
   (frm-save (:store self) (relais-info self)))
@@ -150,7 +156,7 @@
       (zipmap [:pinName :pinState] [pin-name state])
       nil)))
 
-(defn set-relais-state
+(defn set-relais-state!
   [self pin]
   (init-or-alter-state self (:pinName pin) (:pinState pin))
   (persist-states! self)

@@ -12,5 +12,5 @@
   (single-relais-info rio id ))
 
 (defn set-pin [rio pin] :- Pin
-  (set-relais-state rio pin ))
+  (set-relais-state! rio pin ))
 

@@ -12,7 +12,7 @@
 (deftest test-raspi-io
   (testing "initializing pin state"
     (let [s (c/start-system (test-system))
-          r (rio/set-relais-state (:rio s) {:pinName "00" :pinState "low"})
+          r (rio/set-relais-state! (:rio s) {:pinName "00" :pinState "low"})
           result-state-zero (rio/get-state (:rio s) "00")]
       (is (= result-state-zero "LOW"))))
 

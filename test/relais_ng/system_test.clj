@@ -22,7 +22,7 @@
                                         (println "mocked persist-state!")
                                         )]
       (let [s (c/start (test-system))
-            r (rio/set-relais-state (:rio s) {:pinName "09" :pinState "LOW"})
+            r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "LOW"})
             ]
         (is (= r {:pinName "09" :pinState "LOW"})))))
   (testing "unknown pin is returned as nil"
@@ -32,16 +32,46 @@
       (is (nil? r)))))
 
 (deftest test-am
-  (testing "a activation-manager component stores pin state"
-    (let [s (c/start (test-system))
-          r (rio/set-relais-state (:rio s) {:pinName "foo" :pinState "low"})
-          ]
-      (is (= r {:pinName "foo" :pinState "low"}))))
-  (testing "unknown pin is returned as nil"
-    (let [s (c/start (test-system))
-          r (rio/single-relais-info (:rio s) "baz")
-          ]
-      (is (nil? r)))))
+  (testing "a activation-manager component should calculate activation..."
+    (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})]
+      (let [s (c/start (test-system))
+            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            result (am/calc-rule (:am s))]
+        (is (= result "LOW")))))
+
+  (testing "a activation-manager component should do nothing without pins..."
+    (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})
+                  rio/persist-states! (fn [self]
+                                        (println "mocked persist-state!")
+                                        )]
+      (let [s (c/start (test-system))
+            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            result (am/apply-rule (:am s))]
+        (is (= 1 1)))))
+
+  (testing "a activation-manager component should do settings on pins..."
+    (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})
+                  rio/persist-states! (fn [self]
+                                        (println "mocked persist-state!")
+                                        )]
+      (let [s (c/start (test-system))
+            r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
+            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            _ (am/apply-rule (:am s))
+            result (rio/single-relais-info (:rio s) "09")]
+        (is (= (:pinState result) "LOW")))))
+
+  (testing "a activation-manager component should do settings on pins..."
+    (with-redefs [tm/get-Measurement (fn [self] {:temperature 18 :humidity 89})
+                  rio/persist-states! (fn [self]
+                                        (println "mocked persist-state!")
+                                        )]
+      (let [s (c/start (test-system))
+            r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
+            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            _ (am/apply-rule (:am s))
+            result (rio/single-relais-info (:rio s) "09")]
+        (is (= (:pinState result) "HIGH"))))))
 
 
 
