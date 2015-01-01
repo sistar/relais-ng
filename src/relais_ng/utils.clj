@@ -1,6 +1,7 @@
 (ns relais-ng.utils
   (:import (java.io File FileWriter PushbackReader FileReader))
-  (:require [clojure.tools.logging :as log]))
+  (:require [clojure.tools.logging :as log]
+            [clojure.java.io :as io]))
 
 ;; shutdown hooks
 
@@ -52,3 +53,14 @@
       (catch Exception e
         (log/error "failed to read from [" file " cause" (.getCause e))
         default))))
+
+(defn resource [path]
+  (when path
+    (-> (Thread/currentThread) .getContextClassLoader (.getResource path))))
+
+(defn to-known-path [name]
+  (let [target-path (File. (File. "/tmp") name)
+        _ (spit target-path (slurp (io/file (resource name))))]
+    (.getAbsolutePath target-path)))
+
+

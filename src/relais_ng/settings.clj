@@ -6,17 +6,17 @@
             [clojure.java.io :as io]))
 
 (def template
-  {:type            :real
-   :raspi?            false
-   :measure-script   "/var/opt/relais-ng/dht-22-sample-mock.py"
-   :state-store "/var/opt/relais-ng/heat-state.clj"
-   :apply-rules true
+  {:type           :real
+   :raspi?         false
+   :measure-script "/var/opt/relais-ng/dht-22-sample-mock.py"
+   :state-store    "/var/opt/relais-ng/heat-state.clj"
+   :apply-rules    true
    })
 
 (def parsers
-  {:type            keyword
-   :raspi?            #(= "true" %)
-  })
+  {:type   keyword
+   :raspi? #(= "true" %)
+   })
 
 ;; TODO not threadsafe
 (defn write-settings
@@ -41,8 +41,8 @@
       (string/split #"\n")
       (->> (map #(string/split % #":"))
            (reduce #(assoc %1 (keyword (first %2))
-                           ((get parsers (keyword (first %2)) identity)
-                             (string/trim (last %2)))) {}))))
+                              ((get parsers (keyword (first %2)) identity)
+                                (string/trim (last %2)))) {}))))
 
 (defrecord Settings [state]
   component/Lifecycle
@@ -61,8 +61,8 @@
       this)))
 
 (defn new-settings
-  []
-  (map->Settings {}))
+  [& [m]]
+  (map->Settings (if (some? m) {:state m} {})))
 
 ;;
 

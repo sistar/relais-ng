@@ -8,7 +8,9 @@
 
 (defn str-to-pin-state
   [s]
-  (if (= (clojure.string/lower-case s) "high") PinState/HIGH PinState/LOW))
+  (if (or (= :high s)
+          (= (clojure.string/lower-case s) "high"))
+    PinState/HIGH PinState/LOW))
 
 (def raspi-pins {"00" RaspiPin/GPIO_00
                  "01" RaspiPin/GPIO_01
@@ -88,8 +90,8 @@
                        {})
           _ (log/error "_____________>>>>" pin-states)
           modified-component (assoc component
-                                    :gpio-pin-digital-outputs (ref {})
-                                    :store store)
+                               :gpio-pin-digital-outputs (ref {})
+                               :store store)
           _ (init-from-persisted! modified-component pin-states)
           ]
       modified-component))

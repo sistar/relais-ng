@@ -48,13 +48,13 @@
                           :summary "changes pin state"
                           :components [rio]
                           (ok (set-pin rio body)))
-                   (GET* "/heating-rule" []
+                   (GET* "/activation-rule" []
                          :summary "return active rule"
-                         :return String
+                         :return ActivationRule
                          :components [am]
                          (get-rule am))
-                   (POST* "/heating-rule" []
-                          :body [body String]
+                   (POST* "/activation-rule" []
+                          :body [body ActivationRule]
                           :summary "sets rule for relais-activation. Expects clojure fn with parameter measurement returning new state-string"
                           :components [am]
                           (set-rule! am body)))
