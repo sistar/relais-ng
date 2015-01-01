@@ -12,10 +12,18 @@
 (def hour (* 60 60 1000))
 (def minute (* 60 1000))
 
-(defn set-rule
+(defn get-rule
+  [self]
+  @(:rule-str self))
+
+(defn set-rule!
   [self rule-str]
-  (let [rule (read-string rule-str)
-        _ (dosync (ref-set (:rule self) rule))]))
+  (try
+    (let [rule (read-string rule-str)
+          _ (dosync (ref-set (:rule-str self) rule-str)
+                    (ref-set (:rule self) rule))]
+      @(:rule self)
+      ) (catch Exception e)))
 
 (defn calc-rule
   [self]
@@ -26,14 +34,16 @@
       (do (log/error "no measurement result")
           "LOW"))))
 
-(defn apply-rule
+(defn apply-rule!
   [self]
   (let [rio (:rio self)
         names (rio/pin-names rio)
         result (calc-rule self)
-        _ (log/info "applying rule" (:rule self) "to " names)]
+        _ (log/info "applying rule: " (:rule self) " result: " result " to: " names)]
     (doseq [name names]
-      (rio/set-relais-state! rio {:pinName name :pinState result}))))
+      (if (or (= result "LOW") (= result "HIGH"))
+        (rio/set-relais-state! rio {:pinName name :pinState result})))))
+
 
 (defrecord ActivationManager
   [rio tm settings]
@@ -52,13 +62,13 @@
           do-apply-rules true
           new-self (assoc component
                           :rule (ref rule)
-                          :rule-str (ref "")
+                          :rule-str (ref (str rule))
                           :store store
                           :executor executor)
           new-self-2 (assoc new-self :schedule (if do-apply-rules
                                                  (at/every minute
-                                                           #(try (apply-rule new-self)
-                                                                 (catch Throwable e (log/error e " fail") (.printStackTrace e)))
+                                                           #(try (apply-rule! new-self)
+                                                                 (catch Throwable e (log/error "fail" (.printStackTrace e))))
                                                            executor)
                                                  nil))
           ]
@@ -69,5 +79,5 @@
     (assoc component :am nil)))
 
 (defn activation-manager-component
-  []
+  [deps]
   (map->ActivationManager {}))

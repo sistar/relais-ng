@@ -4,6 +4,7 @@
             [relais-ng.pin :refer :all]
             [relais-ng.temperature-measurement :refer :all]
             [relais-ng.raspi-io :refer :all]
+            [relais-ng.activation-manager :refer :all]
             [clojure.tools.logging :as log]))
 
 (defapi app
@@ -16,7 +17,6 @@
                          :return [Pin]
                          :summary "return all pin states"
                          :components [rio]
-
                          (ok (get-pins rio)))
                    (GET* "/relais/:id" []
                          :return Pin
@@ -36,12 +36,6 @@
                            (if (some? p)
                              (ok p)
                              (not-found {:message "not-found"}))))
-                   (POST* "/heating-rule" []
-                          :body [body String]
-                          :summary "sets rule for heating-activation"
-                          :components [rio]
-
-                          )
                    (PUT* "/relais" []
                          :return Pin
                          :body [body Pin]
@@ -53,7 +47,16 @@
                           :body [body Pin]
                           :summary "changes pin state"
                           :components [rio]
-                          (ok (set-pin rio body))))
+                          (ok (set-pin rio body)))
+                   (GET* "/heating-rule" []
+                         :summary "return active rule"
+                         :return String
+                         :components [am]
+                         (get-rule am))
+                   (POST* "/heating-rule" []
+                          :body [body String]
+                          :summary "sets rule for relais-activation. Expects clojure fn with parameter measurement returning new state-string"
+                          :components [am]
+                          (set-rule! am body)))
         (compojure.route/files "" {:root "public"})
-        (compojure.route/resources "/")
-        )
+        (compojure.route/resources "/"))

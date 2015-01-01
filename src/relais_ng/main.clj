@@ -10,45 +10,25 @@
     [relais-ng.utils :refer [on-shutdown]])
   (:gen-class :main true))
 
-(defn base-system []
+(defn base-system [rio-constructor]
   (->
     (component/system-map
       :settings (new-settings)
       :rio (component/using
-             (create-rio) [:settings])
-      :tm (component/using (tm/create-temp-measurement [:settings])[:settings])
-      :http-server (component/using
-                     (create-http-server [:rio :tm] 3000) [:rio :tm]))))
-(defn base-system-mock []
-  (->
-    (component/system-map
-      :settings (new-settings)
-      :rio (component/using
-             (create-rio-mock) [:settings])
+             (rio-constructor) [:settings])
       :tm (component/using
-            (tm/create-temp-measurement [:settings])[:settings])
+            (tm/create-temp-measurement [:settings]) [:settings])
       :am (component/using
-            (am/activation-manager-component)
-            [:rio :tm :settings])
+            (am/activation-manager-component [:rio :tm :settings]) [:rio :tm :settings])
       :http-server (component/using
                      (create-http-server [:rio :tm :am] 3000) [:rio :tm :am]))))
-
-(defrecord RelaisSystem []
-  component/Lifecycle
-  (start [this]
-    (log/info "starting relais")
-    (component/start-system this))
-  (stop [this]
-    (log/info "stopping relais")
-    (component/stop-system this)))
 
 ;; entry point
 
 (defn -main
   [& args]
-  (let [
-        raspi? (=(System/getProperty "os.arch")"arm")
-        b-s (if raspi? (base-system ) (base-system-mock ))
+  (let [raspi? (= (System/getProperty "os.arch") "arm")
+        b-s (base-system (if raspi? create-rio create-rio-mock))
         system (component/start b-s)]
     (on-shutdown
       (log/info "interrupted! shutting down")

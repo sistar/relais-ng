@@ -14,7 +14,7 @@
     :settings (relais-ng.settings/new-settings)
     :tm (c/using (tm/create-temp-measurement false) [:settings])
     :rio (c/using (rio/create-rio-mock) [:settings])
-    :am (c/using (am/activation-manager-component) [:rio :tm :settings])))
+    :am (c/using (am/activation-manager-component[:rio :tm :settings]) [:rio :tm :settings])))
 
 (deftest test-rpio
   (testing "a rio component stores pin state"
@@ -35,7 +35,7 @@
   (testing "a activation-manager component should calculate activation..."
     (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})]
       (let [s (c/start (test-system))
-            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            rule (am/set-rule! (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
             result (am/calc-rule (:am s))]
         (is (= result "LOW")))))
 
@@ -45,8 +45,8 @@
                                         (println "mocked persist-state!")
                                         )]
       (let [s (c/start (test-system))
-            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
-            result (am/apply-rule (:am s))]
+            rule (am/set-rule! (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            result (am/apply-rule! (:am s))]
         (is (= 1 1)))))
 
   (testing "a activation-manager component should do settings on pins..."
@@ -56,8 +56,8 @@
                                         )]
       (let [s (c/start (test-system))
             r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
-            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
-            _ (am/apply-rule (:am s))
+            rule (am/set-rule! (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            _ (am/apply-rule! (:am s))
             result (rio/single-relais-info (:rio s) "09")]
         (is (= (:pinState result) "LOW")))))
 
@@ -68,8 +68,8 @@
                                         )]
       (let [s (c/start (test-system))
             r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
-            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
-            _ (am/apply-rule (:am s))
+            rule (am/set-rule! (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            _ (am/apply-rule! (:am s))
             result (rio/single-relais-info (:rio s) "09")]
         (is (= (:pinState result) "HIGH")))))
 
@@ -80,11 +80,11 @@
                                         (println "mocked persist-state!")
 
                                         )
-                  am/apply-rule (fn [self] (println "foo"))]
+                  am/apply-rule! (fn [self] (println "foo"))]
       (let [s (c/start (test-system))
             r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
-            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
-            _ (am/apply-rule (:am s))
+            rule (am/set-rule! (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            _ (am/apply-rule! (:am s))
 
             result (rio/single-relais-info (:rio s) "09")]
         (is (= (:pinState result) "HIGH"))))))
