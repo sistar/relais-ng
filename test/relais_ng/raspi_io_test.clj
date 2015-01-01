@@ -7,7 +7,9 @@
 (defn test-system []
   (->
     (c/system-map
-      :rio (rio/create-rio-mock))))
+      :settings { :state (atom{ :state-store "/tmp/heat-state.clj"})}
+      :rio (c/using
+             (rio/create-rio-mock) [:settings]))))
 
 (deftest test-raspi-io
   (testing "initializing pin state"
