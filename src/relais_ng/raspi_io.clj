@@ -3,7 +3,8 @@
            (java.io File))
   (:require [com.stuartsierra.component :as component]
             [clojure.tools.logging :as log]
-            [relais-ng.settings :as settings]))
+            [relais-ng.settings :as settings]
+            [relais-ng.utils :as u]))
 
 (defn str-to-pin-state [s]
   (if (= (clojure.string/lower-case s) "high") PinState/HIGH PinState/LOW))
@@ -40,46 +41,32 @@
     (if (some? gpio-pin-digital-output)
       (do
         (log/debug (.getName gpio-pin-digital-output) (.getState gpio-pin-digital-output))
-        (dosync (alter (:gpio-pin-digital-outputs self) assoc raspi-pin gpio-pin-digital-output)))
-
-      )
+        (dosync (alter (:gpio-pin-digital-outputs self) assoc raspi-pin gpio-pin-digital-output))))
     (log/debug @(:gpio-pin-digital-outputs self))))
 
-(defn init-state [self pin-name pin-state-str]
+(defn init-state! [self pin-name pin-state-str]
   (init-dig-io-pin self pin-name (str-to-pin-state pin-state-str)))
 
-(defn alter-state [self pin-name pin-state-str]
-  (let [new-state (str-to-pin-state pin-state-str)
-        raspi-pin (get raspi-pins pin-name)
-        gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) raspi-pin)]
-    (if (some? gpio-pin-digital-output)
-      (.setState gpio-pin-digital-output new-state)
-      (log/error "no digital output" pin-name " not setting pin state" pin-state-str))))
+(defn alter-state! [self pin-name pin-state-str]
+  (if (= (clojure.string/upper-case pin-state-str) "NOOP")
+    (log/debug "not altering state for NOOP state-str")
+    (let [new-state (str-to-pin-state pin-state-str)
+          raspi-pin (get raspi-pins pin-name)
+          gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) raspi-pin)]
+      (if (some? gpio-pin-digital-output)
+        (.setState gpio-pin-digital-output new-state)
+        (log/error "no digital output" pin-name " not setting pin state" pin-state-str)))))
 
-(defn init-or-alter-state [self pin-name pin-state-str]
+(defn init-or-alter-state! [self pin-name pin-state-str]
   (let [raspi-pin (get raspi-pins pin-name)
         gpio-pin-digital-output (get @(:gpio-pin-digital-outputs self) raspi-pin)]
     (if (some? gpio-pin-digital-output)
-      (alter-state self pin-name pin-state-str)
-      (init-state self pin-name pin-state-str))))
+      (alter-state! self pin-name pin-state-str)
+      (init-state! self pin-name pin-state-str))))
 
-(defn frm-save
-  "Save a clojure form to file."
-  [#^java.io.File file form]
-  (with-open [w (java.io.FileWriter. file)]
-    (binding [*out* w *print-dup* true] (prn form))))
-
-(defn frm-load
-  "Load a clojure form from file."
-  [#^java.io.File file]
-  (with-open [r (java.io.PushbackReader.
-                  (java.io.FileReader. file))]
-    (let [rec (read r)]
-      rec)))
-
-(defn init-from-persisted [c pin-states]
+(defn init-from-persisted! [c pin-states]
   (doseq [kv pin-states]
-    (init-or-alter-state c (:pinName kv) (:pinState kv)))
+    (init-or-alter-state! c (:pinName kv) (:pinState kv)))
   c)
 
 (defrecord RaspIo [native gpIoController settings]
@@ -90,11 +77,11 @@
           store (File. state-store)
           _ (log/debug "configured store is :" state-store " isFile: " (.isFile store))
           pin-states (if (.isFile store)
-                       (frm-load store)
+                       (u/frm-load store {})
                        {})]
       (-> (assoc component :gpio-pin-digital-outputs (ref {}))
           (assoc :store store)
-          (init-from-persisted pin-states))))
+          (init-from-persisted! pin-states))))
   (stop [component]
     (println ";; Stopping Raspberry Pi IO")
     (assoc component :rio nil)))
@@ -102,8 +89,7 @@
 (defn create-rio
   []
   (map->RaspIo {:native?        true
-                :gpIoController (GpioFactory/getInstance)})
-  )
+                :gpIoController (GpioFactory/getInstance)}))
 
 (defn createPinProxy [name state]
   (let [state (atom {:pin-state state})]
@@ -135,7 +121,7 @@
   [self]
   (let [raspi-pins (keys @(:gpio-pin-digital-outputs self))
         states (map #(get-state self %) raspi-pins)
-        pin-names (map #(format "%02d" (.address %)) raspi-pins)
+        pin-names (map #(format "%02d" (.getAddress %)) raspi-pins)
         vectors (map vector pin-names states)]
     (map #(zipmap [:pinName :pinState] %) vectors)))
 
@@ -147,7 +133,7 @@
 
 (defn persist-states!
   [self]
-  (frm-save (:store self) (relais-info self)))
+  (u/frm-save (:store self) (relais-info self)))
 
 (defn single-relais-info
   [self pin-name]
@@ -158,6 +144,6 @@
 
 (defn set-relais-state!
   [self pin]
-  (init-or-alter-state self (:pinName pin) (:pinState pin))
+  (init-or-alter-state! self (:pinName pin) (:pinState pin))
   (persist-states! self)
   (single-relais-info self (:pinName pin)))

@@ -40,6 +40,7 @@
                           :body [body String]
                           :summary "sets rule for heating-activation"
                           :components [rio]
+
                           )
                    (PUT* "/relais" []
                          :return Pin

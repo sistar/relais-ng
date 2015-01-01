@@ -1,4 +1,6 @@
-(ns relais-ng.utils)
+(ns relais-ng.utils
+  (:import (java.io File FileWriter PushbackReader FileReader))
+  (:require [clojure.tools.logging :as log]))
 
 ;; shutdown hooks
 
@@ -33,3 +35,20 @@
      ~@body
      (catch Exception e#
        (clojure.tools.logging/error e# "failed while" ~msg))))
+
+(defn frm-save
+  "Save a clojure form to file."
+  [#^File file form]
+  (with-open [w (FileWriter. file)]
+    (binding [*out* w *print-dup* true] (prn form))))
+
+(defn frm-load
+  "Load a clojure form from file."
+  [#^File file default]
+  (with-open [r (PushbackReader.
+                  (FileReader. file))]
+    (try
+      (read r)
+      (catch Exception e
+        (log/error "failed to read from [" file " cause" (.getCause e))
+        default))))

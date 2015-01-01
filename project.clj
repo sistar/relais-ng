@@ -9,6 +9,7 @@
                            [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
                            [org.clojure/tools.logging "0.2.6"]
                            [org.clojure/data.json "0.2.4"]
+                           [overtone/at-at "1.2.0"]
 
                            ;; misc external
                            [me.raynes/fs "1.4.5"]

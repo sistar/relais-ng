@@ -71,6 +71,22 @@
             rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
             _ (am/apply-rule (:am s))
             result (rio/single-relais-info (:rio s) "09")]
+        (is (= (:pinState result) "HIGH")))))
+
+  (testing "a activation-manager component should apply rules by schedule"
+
+    (with-redefs [tm/get-Measurement (fn [self] {:temperature 18 :humidity 89})
+                  rio/persist-states! (fn [self]
+                                        (println "mocked persist-state!")
+
+                                        )
+                  am/apply-rule (fn [self] (println "foo"))]
+      (let [s (c/start (test-system))
+            r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
+            rule (am/set-rule (:am s) "(fn [m] (if (< (:temperature m) 20) \"HIGH\" \"LOW\" ))")
+            _ (am/apply-rule (:am s))
+
+            result (rio/single-relais-info (:rio s) "09")]
         (is (= (:pinState result) "HIGH"))))))
 
 

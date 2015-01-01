@@ -16,7 +16,7 @@
           _ (log/debug "checking" sc (type sc))
           script-found (fs/file? sc)
           _ (if-not script-found
-              (log/error "could not find python script for DHT-XX interaction: " sc (fs/file? "/var/opt/relais-ng/dht-22-sample-mock.py") (fs/file? sc) ))
+              (log/error "could not find python script for DHT-XX interaction: " sc (fs/file? "/var/opt/relais-ng/dht-22-sample-mock.py") (fs/file? sc)))
           ]
       (-> (assoc component :measure-script sc)
           )))
@@ -31,13 +31,13 @@
 
 (defn get-Measurement
   [self] :- Measurement
-  (let [
-        value (:measure-script self)
-        result (sh/sh "python" value)
-        out (:out result)
-        _ (log/trace "out" out)
-        parsed (json/read-str out :key-fn keyword)
-        _ (println "parsed.." parsed)]
-    parsed))
+  (if (some? (:measure-script self))
+    (let [result (sh/sh "python" (:measure-script self))
+          out (:out result)
+          _ (log/trace "out" out)
+          parsed (json/read-str out :key-fn keyword)
+          _ (println "parsed.." parsed)]
+          parsed)
+    nil))
 
 
