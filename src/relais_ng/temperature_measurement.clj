@@ -5,7 +5,8 @@
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]
             [relais-ng.settings :as settings]
-            [me.raynes.fs :as fs]))
+            [me.raynes.fs :as fs])
+  (:import (java.io File)))
 (s/defschema Measurement {:temperature Double :humidity Double})
 
 (defrecord TempMeasure [settings]
@@ -14,9 +15,10 @@
     (println ";; Starting Temperature Measurement Unit")
     (let [sc (settings/get-setting settings :measure-script)
           _ (log/debug "checking" sc (type sc))
-          script-found (fs/file? sc)
+          scf (File. sc)
+          script-found (fs/file? scf)
           _ (if-not script-found
-              (log/error "could not find python script for DHT-XX interaction: " sc (fs/file? "/var/opt/relais-ng/dht-22-sample-mock.py") (fs/file? sc)))
+              (log/error "could not find python script for DHT-XX interaction: " scf  (fs/file? scf)))
           ]
       (assoc component :measure-script sc)
       ))

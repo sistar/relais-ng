@@ -12,9 +12,9 @@
             [relais-ng.activation-manager :as am]
             [clojure.tools.logging :as log]))
 
-(defn test-system [& python-script-path]
+(defn test-system [& args]
   (c/system-map
-    :settings (relais-ng.settings/new-settings (atom {:apply-rules false :state-store "/tmp/t-store.clj" :measure-script ( or python-script-path "/foo") :rule-store "/tmp/r-store.clj"}))
+    :settings (relais-ng.settings/new-settings (atom {:apply-rules false :state-store "/tmp/t-store.clj" :measure-script ( or (first args) "/foo") :rule-store "/tmp/r-store.clj"}))
     :tm (c/using (tm/create-temp-measurement false) [:settings])
     :rio (c/using (rio/create-rio-mock) [:settings])
     :am (c/using (am/activation-manager-component [:rio :tm :settings]) [:rio :tm :settings])))
