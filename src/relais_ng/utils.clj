@@ -63,4 +63,9 @@
         _ (spit target-path (slurp (io/file (resource name))))]
     (.getAbsolutePath target-path)))
 
+(defn ig-ws [t](clojure.string/replace (clojure.string/trim t) #"\s{2,}" " "))
+
+(defn persist-states!
+  [self f]
+  (frm-save (:store self) (f self)))
 

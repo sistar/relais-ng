@@ -141,10 +141,6 @@
   [self]
   (keys @(:gpio-pin-digital-outputs self)))
 
-(defn persist-states!
-  [self]
-  (u/frm-save (:store self) (relais-info self)))
-
 (defn single-relais-info
   [self pin-name]
   (let [state (get-state self pin-name)]
@@ -155,5 +151,5 @@
 (defn set-relais-state!
   [self pin]
   (init-or-alter-state! self (:pinName pin) (:pinState pin))
-  (persist-states! self)
+  (u/persist-states! self relais-info)
   (single-relais-info self (:pinName pin)))

@@ -10,6 +10,7 @@
    :raspi?         false
    :measure-script "/var/opt/relais-ng/dht-22-sample-mock.py"
    :state-store    "/var/opt/relais-ng/heat-state.clj"
+   :rule-store    "/var/opt/relais-ng/rule-store.clj"
    :apply-rules    true
    })
 

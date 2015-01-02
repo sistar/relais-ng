@@ -1,6 +1,6 @@
 (ns relais-ng.activation-manager
   (:import
-    (java.io File PushbackReader FileReader))
+    (java.io File))
   (:require [com.stuartsierra.component :as component]
             [clojure.tools.logging :as log]
             [overtone.at-at :as at]
@@ -17,25 +17,21 @@
 
 (defn get-rule
   [self]
-  (let [value {:time {:from "00:00" :to "23:59"} :rule (str @(:rule-str self))}]
-    (log/trace "---> " value)
-    value))
+  @(:activation-rule self))
 
 (defn set-rule!
-  [self rule-str]
+  [self activation-rule]
   (u/loge
-    (str "set rule: " rule-str)
-    (let [s (str "'" (:rule rule-str)
-          rule (read-string s))
-          _ (dosync (ref-set (:rule-str self) rule)
-                    (ref-set (:rule self) rule))]))
+    (str "set rule: " activation-rule)
+    (dosync (ref-set (:activation-rule self) activation-rule)))
+  (u/persist-states! self get-rule)
   (get-rule self))
 
 (defn calc-rule
   [self]
   (let [
         measurement (tm/get-Measurement (:tm :self))
-        e-f (eval @(:rule-str self))]
+        e-f (eval (:rule @(:activation-rule self)))]
     (if (and (some? measurement) (some? e-f))
       (e-f measurement)
       (do (log/error "measurement result: " measurement "e-f" e-f)
@@ -46,11 +42,10 @@
   (let [rio (:rio self)
         names (rio/pin-names rio)
         result (calc-rule self)
-        _ (log/info "applying rule: " (:rule-str self) " result: " result " to: " names)]
+        _ (log/info "applying rule: " (:activation-rule self) " result: " result " to: " names)]
     (doseq [name names]
       (if (or (= result :low) (= result :high))
         (rio/set-relais-state! rio {:pinName name :pinState result})))))
-
 
 (defrecord ActivationManager
   [rio tm settings]
@@ -62,16 +57,16 @@
           store (File. rule-store)
           _ (log/debug "configured rule-store is :" rule-store " isFile: " (.isFile store))
           default-fn '(fn [measurement] :no-op)
-          rule (if (.isFile store)
-                 (u/frm-load store default-fn)
-                 (do (log/error "could not read from rule-store")
-                     default-fn))
+          default-ar {:time {:from "00:00" :to "23:59"} :rule default-fn}
+          a-r (if (.isFile store)
+                (u/frm-load store default-fn)
+                (do (log/error "could not read from rule-store")
+                    default-ar))
           do-apply-rules (settings/get-setting settings :apply-rules)
           new-self (assoc component
-                     :rule (ref rule)
-                     :rule-str (ref rule)
-                     :store store
-                     :executor executor)
+                          :activation-rule (ref a-r)
+                          :store store
+                          :executor executor)
           new-self-2 (assoc new-self :schedule (if do-apply-rules
                                                  (at/every minute
                                                            #(try (apply-rule! new-self)

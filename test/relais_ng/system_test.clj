@@ -35,12 +35,13 @@
       (is (nil? r)))))
 
 (deftest test-am
-  (let [sample-rule "{:time {:from \"00:00\" :to \"23:59\"} :rule (fn [m] (if (< (:temperature m) 20) :high :low))}"]
+  (let [sample-rule (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule (fn [m] (if (< (:temperature m) 20) :high :low))}")]
     (testing "a activation-manager component should calculate activation..."
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})]
         (let [s (c/start (test-system))
               rule (am/set-rule! (:am s) sample-rule)
               result (am/calc-rule (:am s))]
+
           (is (= result :low)))))
 
     (testing "a activation-manager component should do nothing without pins..."
@@ -105,9 +106,9 @@
         (let [s (c/start (test-system))
               r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
               rule (am/set-rule! (:am s) sample-rule)
-              result (am/get-rule (:am s))]
+              result (str(:rule(am/get-rule (:am s))))]
 
-          (is (= (:rule result) "(fn [m] (if (< (:temperature m) 20) :high :low))")))))))
+          (is (= result "(fn [m] (if (< (:temperature m) 20) :high :low))")))))))
 
 
 
