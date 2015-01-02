@@ -51,23 +51,29 @@
         <span ng-show="myForm.rule.$error.required" class="help-inline">
 	      Required</span>
 	</div>
-	<div class="control-group" ng-class="{error: ruleEntryForm.rule.$invalid}">
-		<label>From</label>
-
-		<timepicker ng-model="from" ng-change="changedTo()" hour-step="1" minute-step="15"
-					show-meridian="false"></timepicker>
+	<table>
+		<tbody>
+		<tr>
+			<div class="control-group" ng-class="{error: ruleEntryForm.rule.$invalid}">
+			<td><label>From</label></td>
+			<td><timepicker ng-model="from" ng-change="changedTo()" hour-step="1" minute-step="15"
+							show-meridian="false"></timepicker>
         <span ng-show="myForm.rule.$error.required" class="help-inline">
+	      Required</span></td>
+			</div>
+			<div class="control-group" ng-class="{error: ruleEntryForm.rule.$invalid}">
+			<td><label>To</label></td>
+			<td><timepicker ng-model="to" ng-change="changedTo()" hour-step="1" minute-step="15"
+							show-meridian="false"></timepicker></td>
+				  <span ng-show="myForm.rule.$error.required" class="help-inline">
 	      Required</span>
-	</div>
+			</div>
+		</tr>
+		</tbody>
 
-	<div class="control-group" ng-class="{error: ruleEntryForm.rule.$invalid}">
-		<label>To</label>
-		<timepicker ng-model="to" ng-change="changedTo()" hour-step="1" minute-step="15"
-					show-meridian="false"></timepicker>
+	</table>
 
-        <span ng-show="myForm.rule.$error.required" class="help-inline">
-	      Required</span>
-	</div>
+
 	<br>
 	<a href="#/" class="btn">Cancel</a>
 	<button ng-click="saveRule()" ng-disabled="isClean() || ruleEntryForm.$invalid"
@@ -79,13 +85,3 @@
 
 </form>
 </br>
-<script type="text/javascript">
-	$('#from').timepicker({
-		minuteStep: 1,
-		template: 'modal',
-		appendWidgetTo: 'body',
-		showSeconds: true,
-		showMeridian: false,
-		defaultTime: false
-	});
-</script>
