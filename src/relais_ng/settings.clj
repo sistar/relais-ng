@@ -74,6 +74,11 @@
   [settings key]
   (get @(:state settings) key))
 
+(defn get-setting-nn
+  [settings key]
+  (let [value (get @(:state settings) key)]
+    (if (some? value) value (throw (RuntimeException. (str "no settings-value for key: " key " in " @(:state settings)))))))
+
 (defn all
   [settings]
   @(:state settings))
