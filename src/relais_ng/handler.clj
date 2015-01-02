@@ -52,11 +52,12 @@
                          :summary "return active rule"
                          :return ActivationRule
                          :components [am]
-                         (get-rule am))
+                         (ok(get-rule am)))
                    (POST* "/activation-rule" []
+                          :return ActivationRule
                           :body [body ActivationRule]
                           :summary "sets rule for relais-activation. Expects clojure fn with parameter measurement returning new state-string"
                           :components [am]
-                          (set-rule! am body)))
+                          (ok(set-rule! am body))))
         (compojure.route/files "" {:root "public"})
         (compojure.route/resources "/"))
