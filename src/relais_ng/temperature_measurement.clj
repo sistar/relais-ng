@@ -12,13 +12,13 @@
 (defrecord TempMeasure [settings]
   component/Lifecycle
   (start [component]
-    (println ";; Starting Temperature Measurement Unit")
+    (log/info ";; Starting Temperature Measurement Unit")
     (let [sc (settings/get-setting settings :measure-script)
           _ (log/debug "checking" sc (type sc))
           scf (File. sc)
           script-found (fs/file? scf)
           _ (if-not script-found
-              (log/error "could not find python script for DHT-XX interaction: " scf  (fs/file? scf)))
+              (log/error "could not find python script for DHT-XX interaction: " scf (fs/file? scf)))
           ]
       (assoc component :measure-script sc)
       ))
@@ -36,10 +36,11 @@
   (if (some? (:measure-script self))
     (let [result (sh/sh "python" (:measure-script self))
           out (:out result)
-          _ (log/trace "out" out)
+          _ (log/debug "out" out)
           parsed (json/read-str out :key-fn keyword)
-          _ (println "parsed.." parsed)]
+          _ (log/debug "parsed.." parsed)]
       parsed)
-    nil))
+    (do (log/error "no measurement script - self:" self)
+        nil)))
 
 

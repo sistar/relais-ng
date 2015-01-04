@@ -13,36 +13,75 @@
 (def hour (* 60 60 1000))
 (def minute (* 60 1000))
 
-(s/defschema ActivationRule {:time {:from String :to String} :rule String})
+(s/defschema ActivationRule {:time {:from String :to String} :rule String :id String :position String})
 
-(defn get-rule
+(defn get-activation-rule
+  "clojure-rule serialized to string"
+  [self id]
+  (let [ars @(:activation-rules self)
+        ar (ars id)
+        f (:from (:time ar))
+        t (:to (:time ar))
+        r (:rule ar)
+        i (:id ar)
+        p (:position ar)]
+    {:time {:from f :to t} :rule (str r) :id i :position p}))
+
+(defn get-activation-rules
   [self]
-  @(:activation-rule self))
+  (sort-by #(:id %) (map (partial get-activation-rule self) (keys @(:activation-rules self)))))
+
+(defn eval-rule [ar]
+  (let [f (:from (:time ar))
+        t (:to (:time ar))
+        r (:rule ar)
+        i (:id ar)
+        p (:position ar)
+        er (if (= (type r) String) (read-string r) r)]
+    {:time {:from f :to t} :rule er :id i :position p}))
+
+(defn uuid [] (str (java.util.UUID/randomUUID)))
 
 (defn set-rule!
   [self activation-rule]
   (u/loge
     (str "set rule: " activation-rule)
-    (dosync (ref-set (:activation-rule self) activation-rule)))
-  (u/persist-states! self get-rule)
-  (get-rule self))
+    (let [i (:id activation-rule)
+          i-valid (if (and (some? i) (not (some #{i} (map #(keys %) @(:activation-rules self))))) i (uuid))
+          a-r-i-v (assoc activation-rule :id i-valid)
+          p (:position activation-rule)
+          existing-positions (map #((:position (vals %))) @(:activation-rules self))
+          p-valid (if (and (some? p) (not (some #{p} existing-positions ))) p (+ (max existing-positions) 1))
+          a-r-p-v (assoc a-r-i-v :position p-valid)
+          _ (log/info "set-rule! " a-r-p-v)
+          ]
+      (dosync (ref-set (:activation-rules self) (assoc @(:activation-rules self) (:id a-r-p-v) (eval-rule a-r-p-v))))
+      (u/persist-states! self @(:activation-rules self))
+      (get-activation-rule self (:id a-r-p-v))
+      )
+    ))
+
+(defn delete-rule! [self id]
+  (dosync (ref-set (:activation-rules self) (dissoc @(:activation-rules self) id))))
 
 (defn calc-rule
-  [self]
-  (let [
-        measurement (tm/get-Measurement (:tm :self))
-        e-f (eval (:rule @(:activation-rule self)))]
-    (if (and (some? measurement) (some? e-f))
-      (e-f measurement)
-      (do (log/error "measurement result: " measurement "e-f" e-f)
-          :low))))
+  [self id]
+  (if (some #{id} @(:activation-rules self) )
+    (let [measurement (tm/get-Measurement (:tm self))
+          e-f (eval (:rule (@(:activation-rules self) id)))]
+      (if (and (some? measurement) (some? e-f))
+        (e-f measurement)
+        (do (log/error "measurement result: " measurement "e-f" e-f)
+            :low)))) (throw (IllegalArgumentException. (str "unknown key: " id (type id) " in "
+                                                            (keys @(:activation-rules self)) " "(map #(type %)(keys @(:activation-rules self)))))))
 
-(defn apply-rule!
+(defn apply-rules!
   [self]
   (let [rio (:rio self)
         names (rio/pin-names rio)
-        result (calc-rule self)
-        _ (log/info "applying rule: " (:activation-rule self) " result: " result " to: " names)]
+        results (map (partial calc-rule self) (keys @(:activation-rules self)))
+        result (reduce (fn [l r] (if (not (= :no-op l)) l r)) results)
+        _ (log/info "applying rules: " (:activation-rule self) " result: " result " to: " names)]
     (doseq [name names]
       (if (or (= result :low) (= result :high))
         (rio/set-relais-state! rio {:pinName name :pinState result})))))
@@ -57,20 +96,20 @@
           store (File. rule-store)
           _ (log/debug "configured rule-store is :" rule-store " isFile: " (.isFile store))
           default-fn '(fn [measurement] :no-op)
-          default-ar {:time {:from "00:00" :to "23:59"} :rule default-fn}
-          a-r (if (.isFile store)
-                (u/frm-load store default-fn)
-                (do (log/error "could not read from rule-store")
-                    default-ar))
+          default-ar {:time {:from "00:00" :to "23:59"} :rule default-fn :id 0 :position 0}
+          a-rs (if (.isFile store)
+                 (u/frm-load store default-fn)
+                 (do (log/error "could not read from rule-store")
+                     [default-ar]))
           do-apply-rules (settings/get-setting settings :apply-rules)
           new-self (assoc component
-                          :activation-rule (ref a-r)
-                          :store store
-                          :executor executor)
+                     :activation-rules (ref a-rs)
+                     :store store
+                     :executor executor)
           new-self-2 (assoc new-self :schedule (if do-apply-rules
                                                  (at/every minute
-                                                           #(try (apply-rule! new-self)
-                                                                 (catch Throwable e (log/error "fail" (.printStackTrace e))))
+                                                           #(try (apply-rules! new-self)
+                                                                 (catch Throwable e (log/error "fail" e)))
                                                            executor)
                                                  nil))
           ]

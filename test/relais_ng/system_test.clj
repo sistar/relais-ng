@@ -10,20 +10,19 @@
             [relais-ng.raspi-io :as rio]
             [relais-ng.temperature-measurement :as tm]
             [relais-ng.activation-manager :as am]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log])
+  (:import (clojure.lang PersistentList)))
 
 (defn test-system [& args]
   (c/system-map
-    :settings (relais-ng.settings/new-settings (atom {:apply-rules false :state-store "/tmp/t-store.clj" :measure-script ( or (first args) "/foo") :rule-store "/tmp/r-store.clj"}))
+    :settings (relais-ng.settings/new-settings (atom {:apply-rules false :state-store "/tmp/t-store.clj" :measure-script (or (first args) "/foo") :rule-store "/tmp/r-store.clj"}))
     :tm (c/using (tm/create-temp-measurement false) [:settings])
     :rio (c/using (rio/create-rio-mock) [:settings])
     :am (c/using (am/activation-manager-component [:rio :tm :settings]) [:rio :tm :settings])))
 
 (deftest test-rpio
   (testing "a rio component stores pin state"
-    (with-redefs [rio/persist-states! (fn [self]
-                                        (println "mocked persist-state!")
-                                        )]
+    (with-redefs [u/persist-states! (fn [self f] (println "mocked persist-state!" f))]
       (let [s (c/start (test-system))
             r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "LOW"})
             ]
@@ -35,62 +34,87 @@
       (is (nil? r)))))
 
 (deftest test-am
-  (let [sample-rule (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule (fn [m] (if (< (:temperature m) 20) :high :low))}")]
-    (testing "a activation-manager component should calculate activation..."
+  (let [sample-rule-persist (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule (fn [m] (if (< (:temperature m) 20) :high :low)) :id 0 :position 0}")
+        sample-rule-web (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule \"(fn [m] (if (< (:temperature m) 20) :high :low))\"  :id 0 :position 0 }")
+        sample-rule-web-2 (read-string "{:time {:from \"21:00\" :to \"06:00\"} :rule \"(fn [m] (if (< (:temperature m) 18) :high :low))\"   }")]
+
+    (testing "a activation-manager component should calculate activation :rule set as PersistentList..."
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})]
         (let [s (c/start (test-system))
-              rule (am/set-rule! (:am s) sample-rule)
-              result (am/calc-rule (:am s))]
-
+              rule (am/set-rule! (:am s) sample-rule-persist)
+              result (am/calc-rule (:am s) (:id rule))]
+          (is (= (type (:rule sample-rule-persist)) PersistentList))
           (is (= result :low)))))
+
+    (testing "a activation-manager component should add position and id"
+      (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})]
+        (let [s (c/start (test-system))
+              rule (am/set-rule! (:am s) sample-rule-persist)
+              rule2 (am/set-rule! (:am s) sample-rule-web-2)
+              state (am/get-activation-rules (:am s))
+              ]
+          (is (= (count state) 2))
+          (is (= (:id (first state)) 2))
+          (is (= (:id (second state)) 2)))))
+
+
+    (testing "a activation-manager component should calculate activation with :rule set as string..."
+      (with-redefs [tm/get-Measurement (fn [self] {:temperature 19 :humidity 89})]
+        (let [s (c/start (test-system))
+              rule (am/set-rule! (:am s) sample-rule-web)
+              result (am/calc-rule (:am s) (:id rule))]
+
+          (is (= (type (:rule sample-rule-web)) String))
+          (is (= result :high)))))
+
+    (testing "a activation-manager component should store 2 rules.."
+      (with-redefs [tm/get-Measurement (fn [self] {:temperature 19 :humidity 89})]
+        (let [s (c/start (test-system))
+              rule (am/set-rule! (:am s) sample-rule-web)
+              result (am/calc-rule (:am s) (:id rule))]
+
+          (is (= (type (:rule sample-rule-web)) String))
+          (is (= result :high)))))
+
 
     (testing "a activation-manager component should do nothing without pins..."
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})
-                    rio/persist-states! (fn [self]
-                                          (println "mocked persist-state!")
-                                          )]
+                    u/persist-states! (fn [self f] (println "mocked persist-state!" f))]
         (let [s (c/start (test-system))
-              rule (am/set-rule! (:am s) sample-rule)
-              result (am/apply-rule! (:am s))]
+              rule (am/set-rule! (:am s) sample-rule-persist)
+              result (am/apply-rules! (:am s))]
           (is (= 1 1)))))
 
     (testing "a activation-manager component should do settings on pins..."
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})
-                    rio/persist-states! (fn [self]
-                                          (println "mocked persist-state!")
-                                          )]
+                    u/persist-states! (fn [self f] (println "mocked persist-state!" f))]
         (let [s (c/start (test-system))
               r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
-              rule (am/set-rule! (:am s) sample-rule)
+              rule (am/set-rule! (:am s) sample-rule-persist)
 
-              _ (am/apply-rule! (:am s))
+              _ (am/apply-rules! (:am s))
               result (rio/single-relais-info (:rio s) "09")]
           (is (= (:pinState result) "LOW")))))
 
     (testing "a activation-manager component should do settings on pins..."
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 18 :humidity 89})
-                    rio/persist-states! (fn [self]
-                                          (println "mocked persist-state!")
-                                          )]
+                    u/persist-states! (fn [self f] (println "mocked persist-state!" f))]
         (let [s (c/start (test-system))
               r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
-              rule (am/set-rule! (:am s) sample-rule)
-              _ (am/apply-rule! (:am s))
+              rule (am/set-rule! (:am s) sample-rule-persist)
+              _ (am/apply-rules! (:am s))
               result (rio/single-relais-info (:rio s) "09")]
           (is (= (:pinState result) "HIGH")))))
 
     (testing "a activation-manager component should apply rules by schedule"
 
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 18 :humidity 89})
-                    rio/persist-states! (fn [self]
-                                          (println "mocked persist-state!")
-
-                                          )
-                    am/apply-rule! (fn [self] (println "foo"))]
+                    u/persist-states! (fn [self f] (println "mocked persist-state!" f))
+                    am/apply-rules! (fn [self] (println "foo"))]
         (let [s (c/start (test-system))
               r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
-              rule (am/set-rule! (:am s) sample-rule)
-              _ (am/apply-rule! (:am s))
+              rule (am/set-rule! (:am s) sample-rule-persist)
+              _ (am/apply-rules! (:am s))
 
               result (rio/single-relais-info (:rio s) "09")]
           (is (= (:pinState result) "HIGH")))))
@@ -98,15 +122,12 @@
     (testing "a activation-manager component should be able to return its active rule"
 
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 18 :humidity 89})
-                    rio/persist-states! (fn [self]
-                                          (println "mocked persist-state!")
-
-                                          )
-                    am/apply-rule! (fn [self] (println "foo"))]
+                    u/persist-states! (fn [self f] (println "mocked persist-state!" f))
+                    am/apply-rules! (fn [self] (println "foo"))]
         (let [s (c/start (test-system))
               r (rio/set-relais-state! (:rio s) {:pinName "09" :pinState "HIGH"})
-              rule (am/set-rule! (:am s) sample-rule)
-              result (str(:rule(am/get-rule (:am s))))]
+              rule (am/set-rule! (:am s) sample-rule-persist)
+              result (str (:rule (first (am/get-activation-rules (:am s)))))]
 
           (is (= result "(fn [m] (if (< (:temperature m) 20) :high :low))")))))))
 
@@ -122,7 +143,7 @@
   (testing "call adafruit lib"
     (let [python-script-path (u/to-known-path "dht-22-sample-mock.py")
           _ (log/info "---> " python-script-path)
-          s (c/start (test-system python-script-path ))
+          s (c/start (test-system python-script-path))
           result (tm/get-Measurement (:tm s))]
       (is (= (:temperature result) 12.12))
       (is (= (:humidity result) 7.07)))))

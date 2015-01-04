@@ -48,12 +48,22 @@
                           :summary "changes pin state"
                           :components [rio]
                           (ok (set-pin rio body)))
-                   (GET* "/activation-rule" []
+                   (GET* "/activation-rules" []
                          :summary "return active rule"
+                         :return [ActivationRule]
+                         :components [am]
+                         (ok(get-activation-rules am)))
+                   (GET* "/activation-rules/:id" []
+                         :summary "return rule for id"
+                         :path-params [id :- String]
                          :return ActivationRule
                          :components [am]
-                         (ok(get-rule am)))
-                   (POST* "/activation-rule" []
+                         :responses {404 [String]}
+                         (let [p (get-activation-rule am id)]
+                           (if (some? p)
+                             (ok p)
+                             (not-found {:message "not-found"}))))
+                   (POST* "/activation-rules" []
                           :return ActivationRule
                           :body [body ActivationRule]
                           :summary "sets rule for relais-activation. Expects clojure fn with parameter measurement returning new state-string"
