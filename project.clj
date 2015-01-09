@@ -7,7 +7,7 @@
                            [org.clojure/data.zip "0.1.1"]
                            [org.clojure/tools.namespace "0.2.4"]
                            [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
-                           [org.clojure/tools.logging "0.2.6"]
+                           [org.clojure/tools.logging "0.3.1"]
                            [org.clojure/data.json "0.2.4"]
                            [overtone/at-at "1.2.0"]
 
@@ -19,6 +19,8 @@
                            [com.stuartsierra/dependency "0.1.1"]
                            [com.stuartsierra/component "0.2.2"]
 
+
+                           [metosin/ring-swagger "0.15.0"]
                            [metosin/compojure-api "0.16.4"]
                            [metosin/ring-http-response "0.5.2"]
                            [metosin/ring-swagger-ui "2.0.17"]

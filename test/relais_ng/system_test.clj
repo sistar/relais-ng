@@ -129,9 +129,19 @@
               rule (am/set-rule! (:am s) sample-rule-persist)
               result (str (:rule (first (am/get-activation-rules (:am s)))))]
 
-          (is (= result "(fn [m] (if (< (:temperature m) 20) :high :low))")))))))
+          (is (= result "(fn [m] (if (< (:temperature m) 20) :high :low))"))))))
+
+ )
 
 
+(deftest test-contains-isolation
+  (testing "should reduce multiple results"
+    (let [default-fn '(fn [x] x)
+          m {0 {:time {:from "00:00" :to "23:59"} :rule default-fn :id 0 :position 0}}
+          id 0
+          result (contains? m id)]
+      (is (= result true))
+      )))
 
 (deftest test-pin
   (testing "unknown pin -> nil")

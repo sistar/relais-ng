@@ -51,7 +51,7 @@
           a-r-i-v (assoc activation-rule :id i-valid)
           p (:position activation-rule)
           existing-positions (map #((:position (vals %))) @(:activation-rules self))
-          p-valid (if (and (some? p) (not (some #{p} existing-positions ))) p (+ (max existing-positions) 1))
+          p-valid (if (and (some? p) (not (some #{p} existing-positions))) p (+ (max existing-positions) 1))
           a-r-p-v (assoc a-r-i-v :position p-valid)
           _ (log/info "set-rule! " a-r-p-v)
           ]
@@ -66,22 +66,30 @@
 
 (defn calc-rule
   [self id]
-  (if (some #{id} @(:activation-rules self) )
+  (if (contains? @(:activation-rules self) id)
     (let [measurement (tm/get-Measurement (:tm self))
           e-f (eval (:rule (@(:activation-rules self) id)))]
       (if (and (some? measurement) (some? e-f))
         (e-f measurement)
         (do (log/error "measurement result: " measurement "e-f" e-f)
-            :low)))) (throw (IllegalArgumentException. (str "unknown key: " id (type id) " in "
-                                                            (keys @(:activation-rules self)) " "(map #(type %)(keys @(:activation-rules self)))))))
+            :low)))
+    (log/error "NO")
+    ))
+
+(defn first-non-noop-wins [left right]
+  (if (not (= :no-op left))
+    left
+    right
+    ))
 
 (defn apply-rules!
   [self]
   (let [rio (:rio self)
         names (rio/pin-names rio)
+        _ (log/error (str "type results" @(:activation-rules self)))
         results (map (partial calc-rule self) (keys @(:activation-rules self)))
-        result (reduce (fn [l r] (if (not (= :no-op l)) l r)) results)
-        _ (log/info "applying rules: " (:activation-rule self) " result: " result " to: " names)]
+        result (reduce first-non-noop-wins results)
+        _ (log/info "applying rules: " @(:activation-rules self) " result: " result " to: " names)]
     (doseq [name names]
       (if (or (= result :low) (= result :high))
         (rio/set-relais-state! rio {:pinName name :pinState result})))))
@@ -100,7 +108,7 @@
           a-rs (if (.isFile store)
                  (u/frm-load store default-fn)
                  (do (log/error "could not read from rule-store")
-                     [default-ar]))
+                     {(:id default-ar) default-ar}))
           do-apply-rules (settings/get-setting settings :apply-rules)
           new-self (assoc component
                      :activation-rules (ref a-rs)
@@ -109,7 +117,7 @@
           new-self-2 (assoc new-self :schedule (if do-apply-rules
                                                  (at/every minute
                                                            #(try (apply-rules! new-self)
-                                                                 (catch Throwable e (log/error "fail" e)))
+                                                                 (catch Throwable e (log/error e e)))
                                                            executor)
                                                  nil))
           ]
