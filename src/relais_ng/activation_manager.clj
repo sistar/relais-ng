@@ -13,7 +13,7 @@
 (def hour (* 60 60 1000))
 (def minute (* 60 1000))
 
-(s/defschema ActivationRule {:time {:from String :to String} :rule String :id String :position String})
+(s/defschema ActivationRule {:time {:from String :to String} :rule String :id String :position Long})
 
 (defn get-activation-rule
   "clojure-rule serialized to string"
@@ -25,7 +25,7 @@
         r (:rule ar)
         i (:id ar)
         p (:position ar)]
-    {:time {:from f :to t} :rule (str r) :id i :position p}))
+    {:time {:from f :to t} :rule (str r) :id (str i) :position p}))
 
 (defn get-activation-rules
   [self]
@@ -47,11 +47,14 @@
   (u/loge
     (str "set rule: " activation-rule)
     (let [i (:id activation-rule)
-          i-valid (if (and (some? i) (not (some #{i} (map #(keys %) @(:activation-rules self))))) i (uuid))
+          a-rs  @(:activation-rules self)
+          i-valid (if (and (some? i) (not (contains? a-rs i))) i (uuid))
           a-r-i-v (assoc activation-rule :id i-valid)
           p (:position activation-rule)
-          existing-positions (map #((:position (vals %))) @(:activation-rules self))
-          p-valid (if (and (some? p) (not (some #{p} existing-positions))) p (+ (max existing-positions) 1))
+          vals (vals a-rs)
+          existing-positions (map #(:position %) vals)
+          m-pos (max existing-positions)
+          p-valid (if (and (some? p) (not (some #{p} existing-positions))) p (+ m-pos 1))
           a-r-p-v (assoc a-r-i-v :position p-valid)
           _ (log/info "set-rule! " a-r-p-v)
           ]
