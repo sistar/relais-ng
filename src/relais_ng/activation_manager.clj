@@ -53,7 +53,7 @@
           p (:position activation-rule)
           vals (vals a-rs)
           existing-positions (map #(:position %) vals)
-          m-pos (max existing-positions)
+          m-pos (apply max existing-positions)
           p-valid (if (and (some? p) (not (some #{p} existing-positions))) p (+ m-pos 1))
           a-r-p-v (assoc a-r-i-v :position p-valid)
           _ (log/info "set-rule! " a-r-p-v)
