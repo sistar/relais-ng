@@ -13,7 +13,7 @@
 (def hour (* 60 60 1000))
 (def minute (* 60 1000))
 
-(s/defschema ActivationRule {:time {:from String :to String} :rule String :id String :position Long})
+(s/defschema ActivationRule {(s/optional-key :time) {:from String :to String} :rule String (s/optional-key :id) String (s/optional-key :position) Long})
 
 (defn get-activation-rule
   "clojure-rule serialized to string"
@@ -42,6 +42,17 @@
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
+(defn next-index
+  [kw subject group]
+  (let [v (kw subject)
+        existing (map kw group)
+        max-existing (if (empty? existing) -1 (apply max existing))
+        ]
+    (+ max-existing 1)))
+(defn valid-index
+  [kw subject group]
+  )
+
 (defn set-rule!
   [self activation-rule]
   (u/loge
@@ -50,11 +61,12 @@
           a-rs  @(:activation-rules self)
           i-valid (if (and (some? i) (not (contains? a-rs i))) i (uuid))
           a-r-i-v (assoc activation-rule :id i-valid)
+
           p (:position activation-rule)
           vals (vals a-rs)
           existing-positions (map #(:position %) vals)
-          m-pos (apply max existing-positions)
-          p-valid (if (and (some? p) (not (some #{p} existing-positions))) p (+ m-pos 1))
+          max-pos (apply max existing-positions)
+          p-valid (if (and (some? p) (not (some #{p} existing-positions))) p (+ max-pos 1))
           a-r-p-v (assoc a-r-i-v :position p-valid)
           _ (log/info "set-rule! " a-r-p-v)
           ]
