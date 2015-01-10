@@ -32,13 +32,21 @@
           r (rio/single-relais-info (:rio s) "baz")
           ]
       (is (nil? r)))))
-
-(deftest test-am
+(deftest test-calc-activation-manager
   (let [sample-rule-persist (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule (fn [m] (if (< (:temperature m) 20) :high :low)) :id 0 :position 0}")
         sample-rule-web (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule \"(fn [m] (if (< (:temperature m) 20) :high :low))\"  :id 0 :position 0 }")
         sample-rule-web-2 (read-string "{:time {:from \"21:00\" :to \"06:00\"} :rule \"(fn [m] (if (< (:temperature m) 18) :high :low))\"   }")]
 
-    (testing "a activation-manager component should calculate activation :rule set as PersistentList..."
+    (testing "should calculate activation :rule set as PersistentList..."
+      (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})]
+        (let [s (c/start (test-system))
+              rule (am/set-rule! (:am s) sample-rule-persist)
+              result (am/calc-rule (:am s) (:id rule))]
+          (is (= (:id rule) "0"))
+          (is (= (type (:rule sample-rule-persist)) PersistentList))
+          (is (= result :low)))))
+
+    (testing "should calculate activation :rule set as PersistentList..."
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})]
         (let [s (c/start (test-system))
               rule (am/set-rule! (:am s) sample-rule-persist)
@@ -46,16 +54,36 @@
           (is (= (type (:rule sample-rule-persist)) PersistentList))
           (is (= result :low)))))
 
+    ))
+
+(deftest test-id-activation-manager
+  (let [sample-rule-persist (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule (fn [m] (if (< (:temperature m) 20) :high :low)) :id 0 :position 0}")
+        sample-rule-web (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule \"(fn [m] (if (< (:temperature m) 20) :high :low))\"  :id 0 :position 0 }")
+        sample-rule-web-2 (read-string "{:time {:from \"21:00\" :to \"06:00\"} :rule \"(fn [m] (if (< (:temperature m) 18) :high :low))\"   }")]
+
+
+
     (testing "a activation-manager component should add position and id"
       (with-redefs [tm/get-Measurement (fn [self] {:temperature 21 :humidity 89})]
         (let [s (c/start (test-system))
               rule (am/set-rule! (:am s) sample-rule-persist)
               rule2 (am/set-rule! (:am s) sample-rule-web-2)
               state (am/get-activation-rules (:am s))
+              _ (println @(:activation-rules (:am s)))
               ]
           (is (= (count state) 2))
-          (is (= (:id (first state)) 2))
-          (is (= (:id (second state)) 2)))))
+          (is (= (:id (first state)) "0"))
+          (is (= (count (:id (second state))) 36)))))))
+
+
+(deftest test-activation-manager
+  (let [sample-rule-persist (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule (fn [m] (if (< (:temperature m) 20) :high :low)) :id 0 :position 0}")
+        sample-rule-web (read-string "{:time {:from \"00:00\" :to \"23:59\"} :rule \"(fn [m] (if (< (:temperature m) 20) :high :low))\"  :id 0 :position 0 }")
+        sample-rule-web-2 (read-string "{:time {:from \"21:00\" :to \"06:00\"} :rule \"(fn [m] (if (< (:temperature m) 18) :high :low))\"   }")]
+
+
+
+
 
 
     (testing "a activation-manager component should calculate activation with :rule set as string..."
@@ -131,7 +159,7 @@
 
           (is (= result "(fn [m] (if (< (:temperature m) 20) :high :low))"))))))
 
- )
+  )
 
 
 (deftest test-contains-isolation

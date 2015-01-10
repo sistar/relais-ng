@@ -8,7 +8,8 @@
             [relais-ng.utils :as u]
             [relais-ng.raspi-io :as rio]
             [relais-ng.temperature-measurement :as tm]
-            [schema.core :as s]))
+            [schema.core :as s]
+            [relais-ng.index-util :as iu]))
 
 (def hour (* 60 60 1000))
 (def minute (* 60 1000))
@@ -32,8 +33,8 @@
   (sort-by #(:id %) (map (partial get-activation-rule self) (keys @(:activation-rules self)))))
 
 (defn eval-rule [ar]
-  (let [f (:from (:time ar))
-        t (:to (:time ar))
+  (let [f (if-some [x (:from (:time ar))] x "00:00:00")
+        t (if-some [x (:to (:time ar))] x "23:59:59")
         r (:rule ar)
         i (:id ar)
         p (:position ar)
@@ -42,31 +43,19 @@
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
-(defn next-index
-  [kw subject group]
-  (let [v (kw subject)
-        existing (map kw group)
-        max-existing (if (empty? existing) -1 (apply max existing))
-        ]
-    (+ max-existing 1)))
-(defn valid-index
-  [kw subject group]
-  )
+
 
 (defn set-rule!
   [self activation-rule]
   (u/loge
     (str "set rule: " activation-rule)
-    (let [i (:id activation-rule)
-          a-rs  @(:activation-rules self)
-          i-valid (if (and (some? i) (not (contains? a-rs i))) i (uuid))
+    (let [id-transmitted (some? (:id activation-rule))
+          i (str(:id activation-rule))
+          a-rs @(:activation-rules self)
+          i-valid (if (and id-transmitted (not (contains? a-rs i))) i (uuid))
           a-r-i-v (assoc activation-rule :id i-valid)
-
-          p (:position activation-rule)
           vals (vals a-rs)
-          existing-positions (map #(:position %) vals)
-          max-pos (apply max existing-positions)
-          p-valid (if (and (some? p) (not (some #{p} existing-positions))) p (+ max-pos 1))
+          p-valid (iu/valid-index :position get-activation-rule vals)
           a-r-p-v (assoc a-r-i-v :position p-valid)
           _ (log/info "set-rule! " a-r-p-v)
           ]
@@ -83,12 +72,17 @@
   [self id]
   (if (contains? @(:activation-rules self) id)
     (let [measurement (tm/get-Measurement (:tm self))
-          e-f (eval (:rule (@(:activation-rules self) id)))]
+          rule (:rule (@(:activation-rules self) id))
+          _ (println "rule:" rule "type:" (type rule))
+          e-f (eval rule)]
       (if (and (some? measurement) (some? e-f))
-        (e-f measurement)
-        (do (log/error "measurement result: " measurement "e-f" e-f)
-            :low)))
-    (log/error "NO")
+        (let [result (e-f measurement)
+              _ (println "XXXX" e-f measurement result)
+              ]
+          result)
+        (do (log/error "measurement result: " measurement "e-f" e-f) :low))
+      )
+    (log/error "NO RULE with ID" id)
     ))
 
 (defn first-non-noop-wins [left right]
