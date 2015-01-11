@@ -50,7 +50,7 @@
   (u/loge
     (str "set rule: " activation-rule)
     (let [id-transmitted (some? (:id activation-rule))
-          i (str(:id activation-rule))
+          i (str (:id activation-rule))
           a-rs @(:activation-rules self)
           i-valid (if (and id-transmitted (not (contains? a-rs i))) i (uuid))
           a-r-i-v (assoc activation-rule :id i-valid)
@@ -66,7 +66,14 @@
     ))
 
 (defn delete-rule! [self id]
+  (println " YYY XXX" id)
   (dosync (ref-set (:activation-rules self) (dissoc @(:activation-rules self) id))))
+
+(defn reset-rules! [self]
+  (let [ks (keys @(:activation-rules self))
+        f (partial delete-rule! self)]
+    (doall(map f ks))))
+
 
 (defn calc-rule
   [self id]
@@ -95,8 +102,7 @@
   [self]
   (let [rio (:rio self)
         names (rio/pin-names rio)
-        _ (log/error (str "type results" @(:activation-rules self)))
-        results (map (partial calc-rule self) (keys @(:activation-rules self)))
+        results (doall (map (partial calc-rule self) (keys @(:activation-rules self))))
         result (reduce first-non-noop-wins results)
         _ (log/info "applying rules: " @(:activation-rules self) " result: " result " to: " names)]
     (doseq [name names]
