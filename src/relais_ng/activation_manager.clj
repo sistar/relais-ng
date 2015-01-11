@@ -16,17 +16,21 @@
 
 (s/defschema ActivationRule {(s/optional-key :time) {:from String :to String} :rule String (s/optional-key :id) String (s/optional-key :position) Long})
 
-(defn get-activation-rule
+(defn ser-activation-rule
   "clojure-rule serialized to string"
-  [self id]
-  (let [ars @(:activation-rules self)
-        ar (ars id)
-        f (:from (:time ar))
+  [self ar]
+  (let [f (:from (:time ar))
         t (:to (:time ar))
         r (:rule ar)
         i (:id ar)
         p (:position ar)]
     {:time {:from f :to t} :rule (str r) :id (str i) :position p}))
+
+(defn get-activation-rule
+  "clojure-rule serialized to string"
+  [self id]
+  (let [ar (get @(:activation-rules self) id)]
+    (if (some? ar) (ser-activation-rule self ar) nil)))
 
 (defn get-activation-rules
   [self]
@@ -42,8 +46,6 @@
     {:time {:from f :to t} :rule er :id i :position p}))
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
-
-
 
 (defn set-rule!
   [self activation-rule]
@@ -65,14 +67,24 @@
       )
     ))
 
-(defn delete-rule! [self id]
-  (println " YYY XXX" id)
-  (dosync (ref-set (:activation-rules self) (dissoc @(:activation-rules self) id))))
+(defn delete-rule!
+  [self id]
+  (let
+    [
+     item (get @(:activation-rules self) id)
+     _ (println "called with id" id item (some? item))
 
-(defn reset-rules! [self]
+     _ (if (some? item)
+         (dosync (ref-set (:activation-rules self) (dissoc @(:activation-rules self) id)))
+         )
+     ]
+    item))
+
+(defn reset-rules!
+  [self]
   (let [ks (keys @(:activation-rules self))
         f (partial delete-rule! self)]
-    (doall(map f ks))))
+    (doall (map f ks))))
 
 
 (defn calc-rule
@@ -80,23 +92,17 @@
   (if (contains? @(:activation-rules self) id)
     (let [measurement (tm/get-Measurement (:tm self))
           rule (:rule (@(:activation-rules self) id))
-          _ (println "rule:" rule "type:" (type rule))
           e-f (eval rule)]
       (if (and (some? measurement) (some? e-f))
-        (let [result (e-f measurement)
-              _ (println "XXXX" e-f measurement result)
-              ]
-          result)
-        (do (log/error "measurement result: " measurement "e-f" e-f) :low))
+        (e-f measurement)
+        (do (log/info "measurement result: " measurement "e-f" e-f) :low))
       )
     (log/error "NO RULE with ID" id)
     ))
 
-(defn first-non-noop-wins [left right]
-  (if (not (= :no-op left))
-    left
-    right
-    ))
+(defn first-non-noop-wins
+  ([left right] (if (not (= :no-op left)) left right))
+  ([] :no-op))
 
 (defn apply-rules!
   [self]

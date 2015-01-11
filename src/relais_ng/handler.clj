@@ -58,11 +58,20 @@
                          :path-params [id :- String]
                          :return ActivationRule
                          :components [am]
-                         :responses {404 [String]}
+                         :responses {404 String}
                          (let [p (get-activation-rule am id)]
                            (if (some? p)
                              (ok p)
-                             (not-found {:message "not-found"}))))
+                             (not-found "not-found"))))
+                   (DELETE* "/activation-rules/:id" []
+                         :summary "delete rule with id"
+                         :path-params [id :- String]
+                         :components [am]
+                         :responses {404 String}
+                         (let [p (delete-rule! am id)]
+                           (if (some? p)
+                             (ok p)
+                             (not-found  (str "id-not-found: " id)))))
                    (POST* "/activation-rules" []
                           :return ActivationRule
                           :body [body ActivationRule]
