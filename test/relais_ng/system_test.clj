@@ -182,6 +182,7 @@
     (let [python-script-path (u/to-known-path "dht-22-sample-mock.py")
           _ (log/info "---> " python-script-path)
           s (c/start (test-system python-script-path))
+          _ (Thread/sleep 2002)
           result (tm/get-Measurement (:tm s))]
       (is (= (:temperature result) 12.12))
       (is (= (:humidity result) 7.07)))))

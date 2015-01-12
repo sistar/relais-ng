@@ -25,6 +25,7 @@
                            [metosin/ring-http-response "0.5.2"]
                            [metosin/ring-swagger-ui "2.0.17"]
                            [http-kit "2.1.18"]
+                           [clj-http "1.0.1"]
 
                            ;; raspi io
                            [com.pi4j/pi4j-core "0.0.5"]

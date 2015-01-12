@@ -7,7 +7,8 @@
             [relais-ng.settings :as settings]
             [me.raynes.fs :as fs]
             [overtone.at-at :as at]
-            [relais-ng.utils :as u])
+            [relais-ng.utils :as u]
+            [relais-ng.thingspeak :as ts])
   (:import (java.io File)))
 (s/defschema Measurement {:temperature Double :humidity Double})
 
@@ -18,12 +19,13 @@
           out (:out result)
           _ (log/debug "out" out)
           parsed (json/read-str out :key-fn keyword)
-          _ (log/debug "parsed.." parsed)]
+          _ (log/debug "parsed.." parsed)
+          _ (ts/write (:thing-speak self) parsed)]
       (dosync (ref-set (:measurement self)  parsed)))
     (do (log/error "no measurement script - self:" self)
         nil)))
 
-(defrecord TempMeasure [settings]
+(defrecord TempMeasure [settings thing-speak]
   component/Lifecycle
   (start [component]
     (log/info ";; Starting Temperature Measurement Unit")
@@ -34,20 +36,15 @@
           _ (if-not script-found
               (log/error "could not find python script for DHT-XX interaction: " scf (fs/file? scf)))
           executor (at/mk-pool)
-          do-measure (settings/get-setting settings :do-measure)
           measurement (ref {})
           new-self (assoc component
                      :executor executor
                      :measure-script sc
                      :measurement measurement)
-          new-self-2 (assoc new-self :schedule (if do-measure
-                                                 (at/every u/minute
+          new-self-2 (assoc new-self :schedule (at/every u/minute
                                                            #(try (measure new-self)
                                                                  (catch Throwable e (log/error e e)))
-                                                           executor)
-                                                 nil))
-
-          ]
+                                                           executor))]
       new-self-2
       ))
   (stop [component]
