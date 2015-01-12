@@ -4,6 +4,8 @@
             [clojure.java.io :as io]))
 
 ;; shutdown hooks
+(def hour (* 60 60 1000))
+(def minute (* 60 1000))
 
 (defn add-shutdown-hook
   [f]

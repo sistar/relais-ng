@@ -11,8 +11,6 @@
             [schema.core :as s]
             [relais-ng.index-util :as iu]))
 
-(def hour (* 60 60 1000))
-(def minute (* 60 1000))
 
 (s/defschema ActivationRule {(s/optional-key :time) {:from String :to String} :rule String (s/optional-key :id) String (s/optional-key :position) Long})
 
@@ -136,7 +134,7 @@
                      :store store
                      :executor executor)
           new-self-2 (assoc new-self :schedule (if do-apply-rules
-                                                 (at/every minute
+                                                 (at/every u/minute
                                                            #(try (apply-rules! new-self)
                                                                  (catch Throwable e (log/error e e)))
                                                            executor)
