@@ -60,7 +60,7 @@
           _ (log/info "set-rule! " a-r-p-v)
           ]
       (dosync (ref-set (:activation-rules self) (assoc @(:activation-rules self) (:id a-r-p-v) (eval-rule a-r-p-v))))
-      (u/persist-states! self @(:activation-rules self))
+      (u/frm-save (:store self) @(:activation-rules self))
       (get-activation-rule self (:id a-r-p-v))
       )
     ))
