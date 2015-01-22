@@ -77,6 +77,14 @@
                           :body [body ActivationRule]
                           :summary "sets rule for relais-activation. Expects clojure fn with parameter measurement returning new state-string"
                           :components [am]
-                          (ok(set-rule! am body))))
+                          (ok(set-rule! am body)))
+                   (POST* "/sensors/:id" []
+                          :summary "update sensor data"
+                          :path-params [id :- String]
+                          :components [tm]
+                          :body [body GenericMeasurement]
+                          (ok(receive-measurement tm id body))
+                          )
+                   )
         (compojure.route/files "" {:root "public"})
         (compojure.route/resources "/"))

@@ -1,16 +1,17 @@
-<input type="text" ng-model="search" class="search-query" placeholder="Search">
-<div class="relais-state"><table>
-    <thead>
-    <tr>
-        <th>Relais</th>
-        <th>State</th>
-        <th><a href="#/new"><i class="icon-plus-sign"></i></a></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr ng-repeat="rel in relais | filter:search | orderBy:'pinName'" ng-show="rel.pinName">
-        <td><a href="{{rel.pinName}}" target="_blank">{{rel.pinName}}</a></td>
-        <td>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12"><input type="text" ng-model="search" class="search-query" placeholder="Search"></div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-4 h4">Relais</div>
+        <div class="col-md-4 h4">State</div>
+        <div class="col-md-4"><a href="#/new"><i class="icon-plus-sign"></i></a></div>
+    </div>
+
+    <div class="row" ng-repeat="rel in relais | filter:search | orderBy:'pinName'" ng-show="rel.pinName">
+        <div class="col-md-4"><a href="{{rel.pinName}}" target="_blank">{{rel.pinName}}</a></div>
+        <div class="col-md-4">
             <form>
                 <div class="onoffswitch">
                     <input type="checkbox" id="cb{{rel.pinName}}" ng-model="rel.pinState" class="onoffswitch-checkbox"
@@ -21,48 +22,41 @@
                     </label>
                 </div>
             </form>
-        </td>
-        <td>
+        </div>
+        <div class="col-md-4">
             <a href="#/edit/{{rel.pinName}}"><i class="icon-pencil"></i></a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+        </div>
+    </div>
+    <br>
 </div>
-<br>
-<table>
-    <tbody>
-    <tr>
-        <td style=" text-align: right;font-weight: bold">Temperature:</td>
-        <td>{{measurement.temperature | number:2}}</td>
-        <td>°C</td>
-    </tr>
-    <tr>
-        <td style=" text-align: right;font-weight: bold">Humidity:</td>
-        <td>{{measurement.humidity | number:2}}</td>
-        <td>%</td>
-    </tr>
-    </tbody>
-</table>
-<br>
-<h3>Rules</h3>
-<table>
-    <thead>
-    <tr>
-        <th>Rule</th>
-        <th>From</th>
-        <th>To</th>
-        <th><a href="#/new-rule"><i class="icon-plus-sign"></i></a></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr ng-repeat="rule in rules | filter:search | orderBy:'position'" ng-show="rule.rule">
-        <td><a href="{{rule.position}}" target="_blank">{{rule.position}}</a></td>
-        <td><{{rule.rule}}</a></td>
-        <td><{{rule.time.from}}</a></td>
-        <td><{{rule.time.to}}</a></td>
-        <td><a href="#/edit-rule/{{rule.position}}"><i class="icon-pencil"></i></a></td>
-    </tr>
-    </tbody>
-</table>
+<div class="container">
+    <div class="well">
+        <div class="row">
+            <div class="col-md-4">Temperature:</div>
+            <div class="col-md-6">{{measurement.temperature | number:2}} °C</div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">Humidity:</div>
+            <div class="col-md-6">{{measurement.humidity | number:2}} %</div>
+        </div>
+    </div>
 
+    <br>
+
+    <h3>Rules</h3>
+
+    <div class="row">
+        <div class="col-md-6 h4">Rule</div>
+        <div class="col-md-2 h4">From</div>
+        <div class="col-md-2 h4">To</div>
+        <div class="col-md-2 h4"><a href="#/new-rule"><i class="icon-plus-sign"></i></a></div>
+    </div>
+    <div class="row" ng-repeat="rule in rules | filter:search | orderBy:'position'" ng-show="rule.rule">
+        <div class="col-md-6"><a href="{{rule.position}}" target="_blank">{{rule.position}}</a></div>
+        <div class="col-md-2"><{{rule.rule}}</a></div>
+        <div class="col-md-2"><{{rule.time.from}}</a></div>
+        <div class="col-md-1"><{{rule.time.to}}</a></div>
+        <div class="col-md-1"><a href="#/edit-rule/{{rule.position}}"><i class="icon-pencil"></i></a></div>
+    </div>
+
+</div>

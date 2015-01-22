@@ -11,7 +11,12 @@
             [relais-ng.thingspeak :as ts])
   (:import (java.io File)))
 (s/defschema Measurement {:temperature Double :humidity Double})
-
+(s/defschema GenericMeasurement [{:name String :value String}])
+(defn receive-measurement
+  "measurement via POST"
+  [tm id body]
+  (log/info "MM" id body)
+  )
 (defn measure
   [self]
   (if (some? (:measure-script self))
@@ -21,7 +26,7 @@
           parsed (json/read-str out :key-fn keyword)
           _ (log/debug "parsed.." parsed)
           _ (ts/write (:thing-speak self) parsed)]
-      (dosync (ref-set (:measurement self)  parsed)))
+      (dosync (ref-set (:measurement self) parsed)))
     (do (log/error "no measurement script - self:" self)
         nil)))
 
@@ -42,9 +47,9 @@
                      :measure-script sc
                      :measurement measurement)
           new-self-2 (assoc new-self :schedule (at/every u/minute
-                                                           #(try (measure new-self)
-                                                                 (catch Throwable e (log/error e e)))
-                                                           executor))]
+                                                         #(try (measure new-self)
+                                                               (catch Throwable e (log/error e e)))
+                                                         executor))]
       new-self-2
       ))
   (stop [component]
