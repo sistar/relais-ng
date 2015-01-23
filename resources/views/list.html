@@ -52,10 +52,10 @@
         <div class="col-md-2 h4"><a href="#/new-rule"><i class="icon-plus-sign"></i></a></div>
     </div>
     <div class="row" ng-repeat="rule in rules | filter:search | orderBy:'position'" ng-show="rule.rule">
-        <div class="col-md-6"><a href="{{rule.position}}" target="_blank">{{rule.position}}</a></div>
-        <div class="col-md-2"><{{rule.rule}}</a></div>
+        <div class="col-md-1"><a href="{{rule.position}}" target="_blank">{{rule.position}}</a></div>
+        <div class="col-md-6"><{{rule.rule}}</a></div>
         <div class="col-md-2"><{{rule.time.from}}</a></div>
-        <div class="col-md-1"><{{rule.time.to}}</a></div>
+        <div class="col-md-2"><{{rule.time.to}}</a></div>
         <div class="col-md-1"><a href="#/edit-rule/{{rule.position}}"><i class="icon-pencil"></i></a></div>
     </div>
 
