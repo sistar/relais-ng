@@ -16,6 +16,10 @@
   [& body]
   `(add-shutdown-hook (fn [] ~@body)))
 
+(defn parse-int [s]
+  (Integer/parseInt (re-find #"\A-?\d+" s)))
+
+
 (defn parse-long
   [^String s]
   (Long/valueOf s))

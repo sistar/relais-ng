@@ -9,7 +9,8 @@
             [relais-ng.raspi-io :as rio]
             [relais-ng.temperature-measurement :as tm]
             [schema.core :as s]
-            [relais-ng.index-util :as iu]))
+            [relais-ng.index-util :as iu]
+            [relais-ng.thingspeak :as ts]))
 
 
 (s/defschema ActivationRule {(s/optional-key :time) {:from String :to String} :rule String (s/optional-key :id) String (s/optional-key :position) Long})

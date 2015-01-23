@@ -18,7 +18,7 @@
       :rio (component/using
              (rio-constructor) [:settings])
       :thing-speak (component/using
-                     (ts/create) [:settings])
+                     (ts/create) [:settings :rio])
       :tm (component/using
             (tm/create-temp-measurement [:settings]) [:settings :thing-speak])
       :am (component/using
