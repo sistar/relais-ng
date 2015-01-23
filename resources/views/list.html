@@ -3,6 +3,7 @@
         <div class="col-md-12"><input type="text" ng-model="search" class="search-query" placeholder="Search"></div>
     </div>
     <br>
+
     <div class="row">
         <div class="col-md-4 h4">Relais</div>
         <div class="col-md-4 h4">State</div>
@@ -45,18 +46,26 @@
 
     <h3>Rules</h3>
 
-    <div class="row">
-        <div class="col-md-6 h4">Rule</div>
-        <div class="col-md-2 h4">From</div>
-        <div class="col-md-2 h4">To</div>
-        <div class="col-md-2 h4"><a href="#/new-rule"><i class="icon-plus-sign"></i></a></div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+            <th class="col-md-1 h4">Pos</th>
+            <th class="col-md-6 h4">Rule</th>
+            <th class="col-md-2 h4">From</th>
+            <th class="col-md-2 h4">To</th>
+            <th class="col-md-1 h4"><a href="#/new-rule"><i class="icon-plus-sign"></i></a></th>
+            </thead>
+            <tbody>
+            <tr ng-repeat="rule in rules | filter:search | orderBy:'position'" ng-show="rule.rule">
+                <td class="col-md-1"><a href="{{rule.position}}" target="_blank">{{rule.position}}</a></td>
+                <td class="col-md-6">{{rule.rule}}</a></td>
+                <td class="col-md-2">{{rule.time.from}}</a></td>
+                <td class="col-md-2">{{rule.time.to}}</a></td>
+                <td class="col-md-1"><a href="#/edit-rule/{{rule.position}}"><i class="icon-pencil"></i></a></td>
+            </tr>
+            </tbody>
+        </table>
     </div>
-    <div class="row" ng-repeat="rule in rules | filter:search | orderBy:'position'" ng-show="rule.rule">
-        <div class="col-md-1"><a href="{{rule.position}}" target="_blank">{{rule.position}}</a></div>
-        <div class="col-md-6"><{{rule.rule}}</a></div>
-        <div class="col-md-2"><{{rule.time.from}}</a></div>
-        <div class="col-md-2"><{{rule.time.to}}</a></div>
-        <div class="col-md-1"><a href="#/edit-rule/{{rule.position}}"><i class="icon-pencil"></i></a></div>
-    </div>
+
 
 </div>

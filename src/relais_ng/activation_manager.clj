@@ -105,14 +105,15 @@
 
 (defn apply-rules!
   [self]
-  (let [rio (:rio self)
-        names (rio/pin-names rio)
-        results (doall (map (partial calc-rule self) (keys @(:activation-rules self))))
-        result (reduce first-non-noop-wins results)
-        _ (log/info "applying rules: " @(:activation-rules self) " result: " result " to: " names)]
-    (doseq [name names]
-      (if (or (= result :low) (= result :high))
-        (rio/set-relais-state! rio {:pinName name :pinState result})))))
+  (if (> (count @(:activation-rules self)) 0)
+    (let [rio (:rio self)
+          names (rio/pin-names rio)
+          results (doall (map (partial calc-rule self) (keys @(:activation-rules self))))
+          result (reduce first-non-noop-wins results)
+          _ (log/info "applying rules: " @(:activation-rules self) " result: " result " to: " names)]
+      (doseq [name names]
+        (if (or (= result :low) (= result :high))
+          (rio/set-relais-state! rio {:pinName name :pinState result}))))))
 
 (defrecord ActivationManager
   [rio tm settings]
