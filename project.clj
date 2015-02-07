@@ -26,6 +26,7 @@
                            [metosin/ring-swagger-ui "2.0.17"]
                            [http-kit "2.1.18"]
                            [clj-http "1.0.1"]
+                           [clojurewerkz/machine_head "1.0.0-beta8"]
 
                            ;; raspi io
                            [com.pi4j/pi4j-core "0.0.5"]
@@ -36,5 +37,6 @@
             :main relais-ng.main
             :uberjar-name "server.jar"
             :profiles {:uberjar {:resource-paths ["swagger-ui"]}
+                       :a {:aot :all}
                        :dev     {:dependencies [[javax.servlet/servlet-api "2.5"]]
                                  :plugins      [[lein-ring "0.8.13"]]}})

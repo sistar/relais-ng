@@ -13,6 +13,7 @@
    :rule-store     "/var/opt/relais-ng/rule-store.clj"
    :apply-rules    true
    :do-measure     true
+   :mqtt-broker-address "tcp://raspberrypi:1883"
    })
 
 (def parsers

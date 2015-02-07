@@ -3,6 +3,7 @@
     [clojure.tools.logging :as log]
     [com.stuartsierra.component :as component]
     [relais-ng.settings :refer [new-settings]]
+    [relais-ng.mqtt :as mqtt]
     [relais-ng.thingspeak :as ts]
     [relais-ng.temperature-measurement :as tm]
     [relais-ng.activation-manager :as am]
@@ -17,6 +18,7 @@
       :settings (new-settings)
       :rio (component/using
              (rio-constructor) [:settings])
+      :mqtt (component/using (mqtt/create-mqtt-component [:settings]) [:settings])
       :thing-speak (component/using
                      (ts/create) [:settings :rio])
       :tm (component/using
