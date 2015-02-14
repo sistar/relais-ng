@@ -1,10 +1,8 @@
 (ns relais-ng.thingspeak
   (:require [com.stuartsierra.component :as component]
             [clj-http.client :as client]
-            [clojure.data.json :as json]
             [clojure.tools.logging :as log]
             [relais-ng.settings :as settings]
-            [relais-ng.utils :as u]
             [relais-ng.raspi-io :as rio]))
 
 (defrecord ThingSpeak [settings]
@@ -12,9 +10,7 @@
 
   (start [component]
     (log/info ";; Starting Thing Speak Unit")
-    (let [write-api-key (settings/get-setting settings :write-api-key)
-          ]
-      (assoc component :write-api-key write-api-key)))
+    (assoc component :write-api-keys (settings/get-setting settings :write-api-keys)))
 
   (stop [component]
     (println ";; Stopping Thing Speak Unit")))
@@ -39,11 +35,12 @@
 
 (defn write
   "write to thingspeak"
-  [self measurement]
+  [self measurement room]
   (let [fields-from-measurement (dumb-translate self measurement)
         fields-from-relais (from-relais-info self 3)
         merged (merge fields-from-measurement fields-from-relais)
-        with-api-key (assoc merged :api_key (:write-api-key self))
+        api-key (get (:write-api-keys self) room)
+        with-api-key (assoc merged :api_key api-key)
         _ (log/debug "send to thingspeak:" with-api-key)]
     (client/post "https://api.thingspeak.com/update"
                  {:form-params with-api-key})))

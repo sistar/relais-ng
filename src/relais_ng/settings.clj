@@ -14,12 +14,15 @@
    :apply-rules    true
    :do-measure     true
    :mqtt-broker-address "tcp://raspberrypi:1883"
+   :mqtt-subscription-topics "/bedroom,/bathroom"
+   :write-api-keys {"livingroom" "PU1HZO8YSP7V4XRK" "bedroom" "DRX5PTOK5T86YADI"}
    })
 
 (def parsers
   {:type   keyword
    :raspi? #(= "true" %)
-   })
+   :write-api-keys #(read-string %)
+   :mqtt-subscription-topics #(clojure.string/split % #",")})
 
 ;; TODO not threadsafe
 (defn write-settings
