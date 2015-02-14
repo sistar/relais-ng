@@ -32,8 +32,9 @@
                            [com.pi4j/pi4j-core "0.0.5"]
 
                            ;; omg logging
+                           [org.slf4j/jcl-over-slf4j "1.7.10"]
                            [ch.qos.logback/logback-classic "1.1.2"]]
-            ;;:ring {:handler relais-ng.handler/app}
+            :exclusions [commons-logging/commons-logging]
             :main relais-ng.main
             :uberjar-name "server.jar"
             :profiles {:uberjar {:resource-paths ["swagger-ui"]}
