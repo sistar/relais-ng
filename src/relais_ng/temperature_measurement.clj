@@ -25,9 +25,10 @@
           _ (log/debug "out" out)
           parsed (json/read-str out :key-fn keyword)]
       (if (< (:humidity parsed) 101)
-        (log/info "parsed acceptable data.." parsed)
-        (ts/write (:thing-speak self) parsed "livingroom")
-        (dosync (ref-set (:measurement self) parsed))))
+        (do
+          (log/info "parsed acceptable data.." parsed)
+          (ts/write (:thing-speak self) parsed "livingroom")
+          (dosync (ref-set (:measurement self) parsed)))))
     (do (log/error "no measurement script - self:" self)
         nil)))
 
