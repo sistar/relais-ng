@@ -37,11 +37,13 @@
         (reset! (:mqtt-con self) (mh/connect (:mqtt-connect-string self) @(:mqtt-id self))))))
 
 (defn publish-subscribe [self]
-  #(try
-    (ensure-connected self)
-    (mh/publish @(:mqtt-con self) "/epoch" (str (long (/ (System/currentTimeMillis) 1000))))
-    (validate-subscribed self)
-    (catch Throwable e (log/error e e))))
+  (let [epoch (str (long (/ (System/currentTimeMillis) 1000)))]
+    #(try
+      (ensure-connected self)
+      (mh/publish @(:mqtt-con self) "/epoch" epoch)
+      (log/info "published /epoch " epoch)
+      (validate-subscribed self)
+      (catch Throwable e (log/error e e)))))
 
 (defrecord MqttComponent []
   component/Lifecycle
