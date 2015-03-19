@@ -70,7 +70,7 @@
   [self id]
   (let
     [item (get @(:activation-rules self) id)]
-    (log/info "delete with id" id "item" item "some?:" (some? item))
+    (log/info "delete with id" id "item" item "some?:" (some? item) " out of" (keys @(:activation-rules self)))
     (if (some? item)
       (do
         (dosync (ref-set (:activation-rules self) (dissoc @(:activation-rules self) id)))
@@ -122,7 +122,7 @@
           store (File. rule-store)
           _ (log/debug "configured rule-store is :" rule-store " isFile: " (.isFile store))
           default-fn '(fn [measurement] :no-op)
-          default-ar {:time {:from "00:00" :to "23:59"} :rule default-fn :id 0 :position 0}
+          default-ar {:time {:from "00:00" :to "23:59"} :rule default-fn :id "0" :position 0}
           a-rs (if (.isFile store)
                  (u/frm-load store default-fn)
                  (do (log/error "could not read from rule-store")
