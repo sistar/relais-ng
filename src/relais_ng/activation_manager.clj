@@ -69,14 +69,12 @@
 (defn delete-rule!
   [self id]
   (let
-    [
-     item (get @(:activation-rules self) id)
-     _ (println "called with id" id item (some? item))
-
-     _ (if (some? item)
-         (dosync (ref-set (:activation-rules self) (dissoc @(:activation-rules self) id)))
-         )
-     ]
+    [item (get @(:activation-rules self) id)]
+    (log/info "delete with id" id "item" item "some?:" (some? item))
+    (if (some? item)
+      (do
+        (dosync (ref-set (:activation-rules self) (dissoc @(:activation-rules self) id)))
+        (u/frm-save (:store self) @(:activation-rules self))))
     item))
 
 (defn reset-rules!
@@ -96,8 +94,7 @@
         (e-f measurement)
         (do (log/info "measurement result: " measurement "e-f" e-f) :low))
       )
-    (log/error "NO RULE with ID" id)
-    ))
+    (log/error "NO RULE with ID" id)))
 
 (defn first-non-noop-wins
   ([left right] (if (not (= :no-op left)) left right))
