@@ -28,7 +28,9 @@
         (do
           (log/info "parsed acceptable data.." parsed)
           (ts/write (:thing-speak self) parsed "livingroom")
-          (dosync (ref-set (:measurement self) parsed)))))
+          (dosync (ref-set (:measurement self) parsed)))
+        (log/error "python script data defect: " parsed "raw:" out)
+        ))
     (do (log/error "no measurement script - self:" self)
         nil)))
 
